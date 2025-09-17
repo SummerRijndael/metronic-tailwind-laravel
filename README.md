@@ -1,7 +1,7 @@
 # Metronic Tailwind HTML Laravel Integration
 Note: You need to purchase the theme for you to have the required assets
 
-This project integrates Metronic Tailwind HTML themes into a Laravel application, providing 10 complete demo layouts showcasing different UI patterns and design approaches.
+This project integrates Metronic Tailwind HTML themes into a Laravel application.
 
 ## Project Overview
 
@@ -84,6 +84,8 @@ public/assets/
    - Mobile-first responsive layouts
    - Touch-friendly navigation
    - Adaptive components across all screen sizes
+  
+5. **Navigation menu helper and config generator**
 
 ### 🎨 Design System
 
