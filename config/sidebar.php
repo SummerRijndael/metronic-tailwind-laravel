@@ -31,7 +31,7 @@ return [
         [
             'type' => 'label',
             'title' => 'My Account',
-            'icon' => 'ki-filled ki-setting-2',
+            'icon' => 'ki-filled ki-profile-circle',
             'route' => null,
             'url' => null,
             'external' => false,
@@ -39,7 +39,7 @@ return [
                 [
                     'type' => 'route',
                     'title' => 'User Profile',
-                    'icon' => 'ki-filled ki-profile-circle',
+                    'icon' => null,
                     'route' => 'myprofile',
                     'url' => null,
                     'external' => false,
@@ -48,7 +48,7 @@ return [
                 [
                     'type' => 'route',
                     'title' => 'Settings',
-                    'icon' => 'ki-filled ki-setting',
+                    'icon' => null,
                     'route' => 'menugen',
                     'url' => null,
                     'external' => false,
@@ -56,6 +56,37 @@ return [
                 ],
             ],
         ],
+
+        [
+            'type' => 'label',
+            'title' => 'User Management',
+            'icon' => 'ki-filled ki-people',
+            'route' => null,
+            'url' => null,
+            'external' => false,
+            'children' => [
+                [
+                    'type' => 'route',
+                    'title' => 'Users List',
+                    'icon' => null,
+                    'route' => 'dashboard',
+                    'url' => null,
+                    'external' => false,
+                    'children' => [],
+                ],
+                [
+                    'type' => 'route',
+                    'title' => 'Settings',
+                    'icon' => null,
+                    'route' => 'dashboard',
+                    'url' => null,
+                    'external' => false,
+                    'children' => [],
+                ],
+            ],
+        ],
+
+
     ],
 
     'secondary' => [

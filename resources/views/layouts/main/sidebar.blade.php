@@ -8,7 +8,7 @@
 				<img class="size-[34px]" src="{{ asset('assets/media/app/mini-logo-circle-success.svg') }}" />
 			</a>
 			<div class="kt-menu kt-menu-default grow" data-kt-menu="true">
-				<div class="kt-menu-item grow" data-kt-menu-item-offset="0, 15px" data-kt-menu-item-placement="bottom-start" data-kt-menu-item-toggle="dropdown" data-kt-menu-item-trigger="hover">
+				<div class="kt-menu-item grow" data-kt-menu-item-offset="0, 15px" data-kt-menu-item-placement="bottom-start" >
 					<div class="kt-menu-label cursor-pointer text-mono font-medium grow justify-between">
 						<span class="text-lg font-medium text-inverse grow">
 							Metronic

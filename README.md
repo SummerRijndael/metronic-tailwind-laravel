@@ -218,3 +218,4 @@ For questions and support:
 - Review the integration documentation
 - Check the demo implementations for examples
 - Refer to Laravel documentation for framework-specific questions
+"# metronic-tailwind-laravel" 

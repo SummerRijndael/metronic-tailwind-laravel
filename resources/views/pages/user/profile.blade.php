@@ -35,7 +35,7 @@
                    </span>
                   </button>
                   <div class="kt-image-input-placeholder border-2 border-green-500 kt-image-input-empty:border-input" data-kt-image-input-placeholder="true" style="background-image:url(assets/media/avatars/blank.png)">
-                   <div class="kt-image-input-preview" data-kt-image-input-preview="true" style="background-image:url('/media/avatars/300-2.png')">
+                   <div class="kt-image-input-preview" data-kt-image-input-preview="true" style="background-image:url('assets(/media/avatars/300-2.png'))">
                    </div>
                    <div class="flex items-center justify-center cursor-pointer h-5 left-0 right-0 bottom-0 bg-black/25 absolute">
                     <svg class="fill-border opacity-80" height="12" viewbox="0 0 14 12" width="14" xmlns="http://www.w3.org/2000/svg">
@@ -55,7 +55,7 @@
                 Name
                </td>
                <td class="py-2 text-foreground font-normaltext-sm">
-                Jason Tatum
+                 {{ auth()->user()->name }}
                </td>
                <td class="py-2 text-center">
                 <a class="kt-btn kt-btn-icon kt-btn-sm kt-btn-ghost kt-btn-primary" href="#">
