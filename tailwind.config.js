@@ -36,7 +36,7 @@ module.exports = {
         'foreground': 'rgb(var(--tw-color-foreground) / <alpha-value>)',
         'muted-foreground': 'rgb(var(--tw-color-muted-foreground) / <alpha-value>)',
         'secondary-foreground': 'rgb(var(--tw-color-secondary-foreground) / <alpha-value>)',
-        /*'border': 'rgb(var(--tw-color-border) / <alpha-value>)',*/
+        'border': 'rgb(var(--tw-color-border) / <alpha-value>)',
         'mono': 'rgb(var(--tw-color-mono) / <alpha-value>)',
       },
       // This section adds custom spacing values to your Tailwind scale.

@@ -74,13 +74,13 @@
 
             <div id="child-container" class="mt-3 hidden">
                 <h4 class="font-medium text-sm">Child Items</h4>
-                <button type="button" id="add-child" class="mt-2 px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-primary/90">+ Add Child</button>
+                <button type="button" id="add-child" class="kt-btn kt-btn-secondary flex justify-center grow">+ Add Child</button>
                 <div id="children-fields" class="space-y-2 mt-2"></div>
             </div>
         </div>
 
         <!-- Generate -->
-        <button id="generate-config" class="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-primary/90">
+        <button id="generate-config" class="kt-btn kt-btn-primary flex justify-center grow">
             Generate Config
         </button>
 

@@ -1,4 +1,4 @@
-<title>Metronic - Tailwind CSS</title>
+<title>{{ env('APP_NAME', 'DefaultAppName') }}</title>
 <meta charset="utf-8" />
 <meta content="follow, index" name="robots" />
 <link href="{{ url(request()->path()) }}" rel="canonical" />

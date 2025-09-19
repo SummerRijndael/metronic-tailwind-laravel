@@ -16,17 +16,18 @@
              </label>
             </div>
             <div class="flex flex-wrap gap-2.5">
-             <select class="hidden" data-kt-select="true" data-kt-select-placeholder="Select a status" data-kt-select-initialized="true">
-              <option value="1" data-kt-select-option-initialized="true">
-               Active
-              </option>
-              <option value="2" data-kt-select-option-initialized="true">
-               Disabled
-              </option>
-              <option value="2" data-kt-select-option-initialized="true">
-               Pending
-              </option>
-             </select><div data-kt-select-wrapper="" class="kt-select-wrapper w-36"><div data-kt-select-display="" class="kt-select-display kt-select" tabindex="0" role="button" data-selected="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Select an option"><div data-kt-select-placeholder="" class="kt-select-placeholder ">Select a status</div></div><div data-kt-select-dropdown="" class="kt-select-dropdown hidden " style="z-index: 105;"><ul role="listbox" aria-label="Select an option" class="kt-select-options " data-kt-select-options="true"><li data-kt-select-option="" data-value="1" data-text="Active" class="kt-select-option " role="option" aria-selected="true">
+             <select name="capture" class="hidden" data-kt-select="true" data-kt-select-placeholder="Select a status" data-kt-select-initialized="true">
+               <option value="1" data-kt-select-option-initialized="true">
+                    Active
+               </option>
+               <option value="2" data-kt-select-option-initialized="true">
+                    Disabled
+               </option>
+               <option value="2" data-kt-select-option-initialized="true">
+                    Pending
+               </option>
+             </select>
+             <div data-kt-select-wrapper="" class="kt-select-wrapper w-36"><div data-kt-select-display="" class="kt-select-display kt-select" tabindex="0" role="button" data-selected="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Select an option"><div data-kt-select-placeholder="" class="kt-select-placeholder ">Select a status</div></div><div data-kt-select-dropdown="" class="kt-select-dropdown hidden " style="z-index: 105;"><ul role="listbox" aria-label="Select an option" class="kt-select-options " data-kt-select-options="true"><li data-kt-select-option="" data-value="1" data-text="Active" class="kt-select-option " role="option" aria-selected="true">
 			<div class="kt-select-option-text" data-kt-text-container="true">
                Active
               </div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-3.5 ms-auto hidden text-primary kt-select-option-selected:block"><path d="M20 6 9 17l-5-5"></path></svg>

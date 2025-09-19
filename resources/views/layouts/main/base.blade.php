@@ -46,7 +46,10 @@
 	@include('layouts.partials.scripts')
 
 	@yield('scripts')
+	@stack('vendors')
 	@stack('scripts')
+	
+
 	
 </body>
 
