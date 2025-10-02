@@ -55,6 +55,12 @@ Breadcrumbs::for('menugen', function (BreadcrumbTrail $trail) {
     $trail->push('Menu Generator', 'menugen');
 });
 
+
+Breadcrumbs::for('2fa.setup', function (BreadcrumbTrail $trail) {
+    $trail->parent('dashboard');
+    $trail->push('test page', 'test');
+});
+
 Breadcrumbs::for('test', function (BreadcrumbTrail $trail) {
     $trail->parent('dashboard');
     $trail->push('test page', 'test');

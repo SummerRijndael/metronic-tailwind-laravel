@@ -1,27 +1,36 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-        {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}
-    </div>
+  
+<div class="max-w-md mx-auto p-6 bg-white rounded shadow mt-8">
+    <h2 class="text-2xl font-bold mb-4">Confirm Password</h2>
+    <p class="mb-6 text-gray-700">
+        This is a secure area of the application. Please confirm your password before continuing.
+    </p>
 
     <form method="POST" action="{{ route('password.confirm') }}">
         @csrf
 
-        <!-- Password -->
-        <div>
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+        <div class="mb-4">
+            <label for="password" class="block font-medium text-gray-700 mb-2">Password</label>
+            <input id="password" name="password" type="password" required autofocus
+                   class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            @error('password')
+                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
-        <div class="flex justify-end mt-4">
-            <x-primary-button>
-                {{ __('Confirm') }}
-            </x-primary-button>
+        <div class="flex items-center justify-between">
+            <button type="submit"
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                Confirm Password
+            </button>
+
+            @if (Route::has('password.request'))
+                <a class="text-sm text-blue-600 hover:underline" href="{{ route('password.request') }}">
+                    Forgot your password?
+                </a>
+            @endif
         </div>
     </form>
+</div>
+
 </x-guest-layout>

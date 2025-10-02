@@ -94,9 +94,6 @@
 
 
 
-
-
-
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
 
                 {{-- Basic Settings Card --}}
@@ -136,7 +133,7 @@
                                         Password Updated
                                     </td>
                                     <td class="py-2 text-secondary-foreground font-normal">
-                                         {{ Auth::user()->password_changed_at ? Auth::user()->password_changed_at->diffForHumans() : 'Never' }}
+                                         {{ $user->password_changed_at ? $user->password_changed_at->diffForHumans() : 'Never' }}
                                     </td>
                                     <td class="py-2 text-end">
                                         <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost kt-btn-primary" href="#">
@@ -150,12 +147,14 @@
                                         2FA
                                     </td>
                                     <td class="py-3.5 text-secondary-foreground font-normal">
-                                        To be set
+                                        {{ $user->two_factor_confirmed_at ? $user->two_factor_confirmed_at->format('F j, Y') : 'To be set' }}
                                     </td>
                                     <td class="py-3 text-end">
-                                        <a class="kt-link kt-link-underlined kt-link-dashed" href="#">
-                                            Setup
-                                        </a>
+                                        @if(!$user->two_factor_confirmed_at)
+                                            <a class="kt-link kt-link-underlined kt-link-dashed" href="#">
+                                                Setup
+                                            </a>
+                                        @endif
                                     </td>
                                 </tr>
                                 <tr>
@@ -185,37 +184,23 @@
                                 </tr>
                                 <tr>
                                     <td class="py-3 text-gray-600 font-normal">
-                                        Team Account
+                                       SOON
                                     </td>
                                     <td class="py-3 text-secondary-foreground font-normal">
-                                        To be set
+                                        SOON
                                     </td>
                                     <td class="py-3 text-end">
                                         <a class="kt-link kt-link-underlined kt-link-dashed" href="#">
-                                            Setup
+                                            SOON
                                         </a>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="py-2 text-secondary-foreground font-normal">
-                                        Social Profiles
+                                       SOON
                                     </td>
                                     <td class="py-0.5">
-                                        <div class="flex items-center gap-2.5">
-                                            <a class="flex items-center justify-center size-8 bg-background rounded-full border border-input" href="#">
-                                                <img alt="" class="size-4" src="assets/media/brand-logos/linkedin.svg">
-                                            </a>
-                                            <a class="flex items-center justify-center size-8 bg-background rounded-full border border-input" href="#">
-                                                <img alt="" class="size-4" src="assets/media/brand-logos/twitch-purple.svg">
-                                            </a>
-                                            <a class="flex items-center justify-center size-8 bg-background rounded-full border border-input" href="#">
-                                                <img alt="" class="dark:hidden size-4" src="assets/media/brand-logos/x.svg">
-                                                <img alt="" class="light:hidden size-4" src="assets/media/brand-logos/x-dark.svg">
-                                            </a>
-                                            <a class="flex items-center justify-center size-8 bg-background rounded-full border border-input" href="#">
-                                                <img alt="" class="size-4" src="assets/media/brand-logos/dribbble.svg">
-                                            </a>
-                                        </div>
+                                        SOON
                                     </td>
                                     <td class="py-2 text-end">
                                         <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost kt-btn-primary" href="#">
@@ -226,22 +211,14 @@
                                 </tr>
                                 <tr>
                                     <td class="py-3 text-secondary-foreground text-sm font-normal">
-                                        Referral Link
+                                       SOON
                                     </td>
                                     <td class="py-3 text-secondary-foreground text-sm font-normal">
-                                        <div class="flex items-center gap-0.5">
-                                            <a class="text-foreground text-sm hover:text-primary" href="#">
-                                                https://studio.co/W3gvQOI35dt
-                                            </a>
-                                            <button class="kt-btn kt-btn-sm kt-btn-ghost kt-btn-icon">
-                                                <i class="ki-filled ki-copy text-muted-foreground text-sm">
-                                                </i>
-                                            </button>
-                                        </div>
+                                        SOON
                                     </td>
                                     <td class="py-3 text-end">
                                         <a class="kt-link kt-link-underlined kt-link-dashed" href="#">
-                                            Re-create
+                                           SOON
                                         </a>
                                     </td>
                                 </tr>

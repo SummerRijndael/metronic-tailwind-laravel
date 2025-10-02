@@ -1,29 +1,268 @@
 <x-guest-layout>
+@push('styles')
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+body {
+	width: 100vw;
+	height: 100vh;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	background-color: black;
+	overflow-x: hidden;
+
+	font-family: "Roboto", sans-serif;
+	font-optical-sizing: auto;
+}
+
+#message {
+	position: absolute;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	flex-direction: column;
+
+	width: 90%;
+	height: 90%;
+}
+
+#m1 {
+	font-size: 35px;
+	font-weight: 600;
+	margin: 1%;
+}
+
+#m2 {
+	font-size: 80px;
+	font-weight: 700;
+	margin: 1%;
+}
+
+#m3 {           
+	font-size: 15px;
+	width: 50%;
+	min-width: 40%;
+	text-align: center;
+	margin: 1%;
+}
+
+#m4 {
+	font-size: 15px;
+	width: 50%;
+	min-width: 40%;
+	text-align: center;
+	margin: 1%;
+}
+
+#charactersDiv {
+	position: absolute;
+	width: 99%;
+	height: 95%;
+}
+
+.characters {
+	width: 18%;
+	height: 18%;
+	position: absolute;
+}
+</style>
+@endpush
 
 <div class="flex items-center justify-center grow h-full">
-   <div class="flex flex-col items-center">
-    <div class="mb-16">
-     <img alt="image" class="dark:hidden max-h-[160px]" src="{{ asset('assets/media/illustrations/20.svg') }}">
-     <img alt="image" class="light:hidden max-h-[160px]" src="{{ asset('assets/media/illustrations/20-dark.svg') }}">
-    </div>
-    <span class="kt-badge kt-badge-primary kt-badge-outline mb-3">
-     500 Error
-    </span>
-    <h3 class="text-2xl font-semibold text-mono text-center mb-2">
-     Internal Server Error
-    </h3>
-    <div class="text-base text-center text-secondary-foreground mb-10">
-     Server error occurred. Please try again later or
-     <a class="text-primary font-medium hover:text-primary" href="#">
-      Contact Us
-     </a>
-     for assistance.
-    </div>
-    <a class="kt-btn kt-btn-primary flex justify-center" href="/">
-     Back to Home
-    </a>
-   </div>
-  </div>
+
+ <div id="message">
+	<div id="m1">Internal Server Error</div>
+	<div id="m2">500</div>
+	<div id="m3">The server encountered an internal error or
+		misconfiguration and was unable to complete your request.</div>
+	<div id="m4">Our "experts" are trying to fix the problem, please stand by.</div>
+</div>
+<div id="charactersDiv">
+</div>
+<canvas id="canvas"></canvas>
+
+
+</div>
+
+@push('scripts')
+<script>
+
+class Circulo {
+	constructor(x, y, size) {
+
+		this.x = x;
+		this.y = y;
+		this.size = size;
+
+	}
+}
+
+let circulos = [];
+
+const canvas = document.querySelector("canvas");
+const context = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+function initArr() {
+
+	circulos.length = 0;
+
+	for (let index = 0; index < 300; index++) {
+
+		let randomX = Math.floor(Math.random() * ((canvas.width * 3) - (canvas.width * 1.2) + 1)) + (canvas.width * 1.2);
+		let randomY = Math.floor(Math.random() * ((canvas.height) - (canvas.height * (-0.2) + 1)) + (canvas.height * (-0.2)));
+		let size = canvas.width / 1000;
+
+		circulos.push(new Circulo(randomX, randomY, size));
+	}
+}
+
+window.addEventListener("resize", () => {
+
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+
+	timer = 0;
+	cancelAnimationFrame(requestID);
+	context.reset();
+	initArr();
+	draw();
+
+	document.getElementById("charactersDiv").innerHTML = "";
+	charactersAnimate();
+})
+
+let timer = 0;
+let requestID;
+initArr();
+
+function draw() {
+
+	timer++;
+	context.setTransform(1, 0, 0, 1, 0, 0);
+
+	let distanceX = canvas.width / 80;
+	let growthRate = canvas.width / 1000;
+
+	context.fillStyle = "white";
+
+	context.clearRect(0, 0, canvas.width, canvas.height);
+
+	circulos.forEach((circulo) => {
+
+		context.beginPath();
+
+		if (timer < 65) {
+
+			circulo.x = circulo.x - distanceX;
+			circulo.size = circulo.size + growthRate;
+		}
+
+		if (timer > 65 && timer < 500) {
+
+			circulo.x = circulo.x - (distanceX * 0.02);
+			circulo.size = circulo.size + (growthRate * 0.2);
+		}
+
+		context.arc(circulo.x, circulo.y, circulo.size, 0, 360);
+		context.fill();
+	})
+
+	requestID = requestAnimationFrame(draw);
+
+	if (timer > 500) {
+
+		cancelAnimationFrame(requestID);
+	}
+}
+
+draw();
+
+function charactersAnimate() {
+
+	for (let index = 0; index < 6; index++) {
+
+		let stick = new Image();
+		stick.classList.add("characters");
+
+		let speedX;
+		let speedRotation;
+
+		switch (index) {
+			case 0:
+				stick.style.top = "0%";
+				stick.src = "{{ asset('assets/media/images/stick0.svg') }}";
+				stick.style.transform = "rotateZ(-90deg)";
+
+				speedX = 1500;
+				break;
+			case 1:
+				stick.style.top = "10%";
+				stick.src = "{{ asset('assets/media/images/stick1.svg') }}";
+
+				speedX = 3000;
+				speedRotation = 2000;
+				break;
+			case 2:
+				stick.style.top = "20%";
+				stick.src = "{{ asset('assets/media/images/stick2.svg') }}";
+
+				speedX = 5000;
+				speedRotation = 1000;
+				break;
+			case 3:
+				stick.style.top = "25%";
+				stick.src = "{{ asset('assets/media/images/stick0.svg') }}";
+
+				speedX = 2500;
+				speedRotation = 1500;
+				break;
+			case 4:
+				stick.style.top = "35%";
+				stick.src = "{{ asset('assets/media/images/stick0.svg') }}";
+
+				speedX = 2000;
+				speedRotation = 300;
+				break;
+			case 5:
+				stick.style.bottom = `5%`;
+				stick.src = "{{ asset('assets/media/images/stick3.svg') }}";
+				break;
+			default:
+				break;
+		}
+
+		document.getElementById("charactersDiv").appendChild(stick);
+
+		if (index == 5) return;
+
+		stick.animate(
+			[{ left: "100%" }, { left: "-20%" }],
+			{ duration: speedX, easing: "linear", fill: "forwards" }
+		);
+
+		if (index == 0) continue;
+
+		stick.animate(
+			[{ transform: "rotate(0deg)" }, { transform: "rotate(-360deg)" }],
+			{ duration: speedRotation, iterations: Infinity, easing: "linear" }
+		);
+
+	}
+
+}
+
+charactersAnimate();
+
+</script>
+@endpush
 
 
 </x-guest-layout>

@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('sex', 10)->nullable();
 
             $table->string('avatar')->nullable()->default('blank.png');
-            $table->json('settings')-nullable();
+            $table->json('settings')->nullable();
 
             $table->string('role_type')->nullable();
             $table->json('permissions')->nullable();

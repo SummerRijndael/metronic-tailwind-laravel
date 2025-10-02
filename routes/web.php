@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TwoFactorSetupController;
 
 // Root route: Guests -> login, Authenticated -> dashboard
 Route::get('/', function () {
@@ -20,6 +21,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/{user?}', [ProfileController::class, 'show'])->name('profile.show');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::post('/user/two-factor-enable', [TwoFactorController::class, 'enable'])->name('user.two-factor.enable');
+    Route::post('/user/two-factor-disable', [TwoFactorController::class, 'disable'])->name('user.two-factor.disable');
+
+    Route::get('/2fa/setup', [TwoFactorSetupController::class, 'show'])->name('2fa.setup');
+    Route::post('/2fa/setup', [TwoFactorSetupController::class, 'verify'])->name('2fa.setup.verify');
 });
 
 Route::get('/profile_settings', function () {
