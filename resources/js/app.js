@@ -19,9 +19,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize modal functionality
     initModals();
     
-    // Globally initialize KtUI components.
-    KTComponents.init();
-
 });
 
 // Drawer functionality

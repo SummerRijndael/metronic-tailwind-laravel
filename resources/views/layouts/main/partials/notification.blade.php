@@ -1287,8 +1287,5 @@
 	</div>
 	<!--End of Notifications Drawer-->
 	<!-- End of Notifications -->
-	<a class="kt-btn kt-btn-ghost kt-btn-icon size-8 hover:bg-background hover:[&_i]:text-primary" href="#">
-		<i class="ki-filled ki-exit-right">
-		</i>
-	</a>
+	
 </div>

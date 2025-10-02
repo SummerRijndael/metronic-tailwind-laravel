@@ -1,7 +1,7 @@
 <?php
-
 use Diglactic\Breadcrumbs\Breadcrumbs;
 use Diglactic\Breadcrumbs\Generator as BreadcrumbTrail;
+use App\Models\User;
 
 // Dashboard
 Breadcrumbs::for('dashboard', function (BreadcrumbTrail $trail) {
@@ -14,10 +14,21 @@ Breadcrumbs::for('myaccount', function (BreadcrumbTrail $trail) {
     $trail->push('My Account', '#');
 });
 
-// Profile page
-Breadcrumbs::for('myprofile', function (BreadcrumbTrail $trail) {
+
+Breadcrumbs::for('profile.show', function (BreadcrumbTrail $trail, ?User $user = null) {
     $trail->parent('myaccount');
-    $trail->push('User Profile', route('myprofile'));
+
+    // fallback to current user
+    $user ??= auth()->user();
+
+    $profileName = $user->name;
+
+    $trail->push(
+        'Profile',
+        $user->id === auth()->id()
+            ? route('profile.show') // no param for current user
+            : route('profile.show', ['user' => $user->id]) // pass id for other user
+    );
 });
 
 // Profile settings page

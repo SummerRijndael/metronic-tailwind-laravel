@@ -8,14 +8,15 @@ class Modal extends Component
 {
     public $id;
     public $title;
-
+    public $autoShow; // Add this line
     /**
      * Create a new component instance.
      */
-    public function __construct($id = 'modal', $title = 'Modal Title')
+    public function __construct($id = 'modal', $title = 'Modal Title', $autoShow = false) // Add $autoShow parameter
     {
         $this->id = $id;
         $this->title = $title;
+        $this->autoShow = $autoShow; // Assign the value
     }
 
     /**

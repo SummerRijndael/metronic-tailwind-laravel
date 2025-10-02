@@ -6,14 +6,6 @@
             </button>
         </div>
         <div class="kt-modal-body flex flex-col items-center pt-0 pb-10">
-            {{-- Image slot --}}
-            @isset($image)
-                <div class="mb-10">
-                    <img alt="image" class="dark:hidden max-h-[140px]" src="{{ asset($image) }}">
-                    <img alt="image" class="light:hidden max-h-[140px]" src="{{ asset($imageDark ?? $image) }}">
-                </div>
-            @endisset
-
             {{-- Title --}}
             <h3 class="text-lg font-medium text-mono text-center mb-3">
                 {{ $title }}
@@ -34,8 +26,7 @@
     </div>
 </div>
 
-{{-- Optional auto show --}}
-@isset($autoShow)
+@if($autoShow)
 <script>
     window.onload = () => {
         const modalEl = document.getElementById('{{ $id }}');
@@ -43,4 +34,4 @@
         modal?.show();
     };
 </script>
-@endisset
+@endif

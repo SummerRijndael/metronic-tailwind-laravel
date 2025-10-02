@@ -3,8 +3,8 @@
 <div class="flex items-center justify-center grow h-full">
    <div class="flex flex-col items-center">
     <div class="mb-16">
-     <img alt="image" class="dark:hidden max-h-[160px]" src="assets/media/illustrations/20.svg">
-     <img alt="image" class="light:hidden max-h-[160px]" src="assets/media/illustrations/20-dark.svg">
+     <img alt="image" class="dark:hidden max-h-[160px]" src="{{ asset('assets/media/illustrations/20.svg') }}">
+     <img alt="image" class="light:hidden max-h-[160px]" src="{{ asset('assets/media/illustrations/20-dark.svg') }}">
     </div>
     <span class="kt-badge kt-badge-primary kt-badge-outline mb-3">
      500 Error
@@ -19,7 +19,7 @@
      </a>
      for assistance.
     </div>
-    <a class="kt-btn kt-btn-primary flex justify-center" href="html/demo10.html">
+    <a class="kt-btn kt-btn-primary flex justify-center" href="/">
      Back to Home
     </a>
    </div>

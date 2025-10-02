@@ -18,7 +18,7 @@
 @section('content')
 <div class="p-5">
     <h3 class="text-base font-semibold mb-3">Menu Config Generator</h3>
-
+  
     <div id="menu-generator" class="space-y-4">
         <!-- Menu Item Builder -->
         <div class="border p-4 rounded-md space-y-3">

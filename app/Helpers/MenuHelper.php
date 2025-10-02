@@ -23,17 +23,18 @@ Debug checklist (if still not working):
 
 Implementation (drop into your helpers file or replace existing prepare_menu):
 */
+use Illuminate\Support\Str;
 
 if (!function_exists('prepare_menu')) {
     function prepare_menu(array $menu): array
     {
-        // current request info
+        // Current request info
         $currentRoute = optional(request()->route())->getName(); // may be null
         $currentUrl = url()->current();
         $currentPath = ltrim(request()->path(), '/'); // path without leading slash
 
         foreach ($menu as &$item) {
-            // normalize keys
+            // Normalize keys
             $item['type'] = $item['type'] ?? 'route';
             $item['title'] = $item['title'] ?? 'No Title';
             $item['icon'] = $item['icon'] ?? null;
@@ -42,33 +43,41 @@ if (!function_exists('prepare_menu')) {
             $item['external'] = $item['external'] ?? false;
             $item['children'] = $item['children'] ?? [];
 
-            // normalize children first (important!)
+            // Normalize children first
             if (!empty($item['children'])) {
                 $item['children'] = prepare_menu($item['children']);
             }
 
-            // default
+            // Smart icon handling
+            if (!empty($item['icon'])) {
+                $ext = pathinfo($item['icon'], PATHINFO_EXTENSION);
+
+                if (in_array(strtolower($ext), ['png', 'jpg', 'jpeg', 'svg', 'gif'])) {
+                    $item['icon'] = asset($item['icon']); // image file → convert to asset URL
+                } else {
+                    $item['icon'] = $item['icon']; // CSS class or other → leave as-is
+                }
+            }
+
+            // Default active state
             $item['active'] = false;
 
-            // 1) match by route name (supports patterns like 'admin.*')
+            // 1) Match by route name (supports wildcard patterns)
             if (!empty($item['route']) && $currentRoute) {
-                // use fully-qualified Str::is without import
-                if (\Illuminate\Support\Str::is($item['route'], $currentRoute) || $item['route'] === $currentRoute) {
+                if (Str::is($item['route'], $currentRoute) || $item['route'] === $currentRoute) {
                     $item['active'] = true;
                 }
             }
 
-            // 2) match by url (absolute or path)
+            // 2) Match by URL (absolute or path)
             if (!$item['active'] && !empty($item['url'])) {
                 $url = $item['url'];
 
-                // absolute external urls
                 if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
                     if (rtrim($url, '/') === rtrim($currentUrl, '/')) {
                         $item['active'] = true;
                     }
                 } else {
-                    // treat as internal path - compare request path
                     $itemPath = ltrim(parse_url($url, PHP_URL_PATH) ?? $url, '/');
                     if ($itemPath !== '' && request()->is($itemPath)) {
                         $item['active'] = true;
@@ -76,7 +85,7 @@ if (!function_exists('prepare_menu')) {
                 }
             }
 
-            // 3) if any child is active, the parent becomes active
+            // 3) If any child is active, parent becomes active
             if (!$item['active'] && !empty($item['children'])) {
                 foreach ($item['children'] as $child) {
                     if (!empty($child['active'])) {
@@ -86,7 +95,7 @@ if (!function_exists('prepare_menu')) {
                 }
             }
 
-            // convenience flags
+            // Convenience flags
             $item['hasChild'] = !empty($item['children']);
             $item['skip_url'] = $item['skip_url'] ?? ($item['type'] === 'label');
         }
@@ -94,6 +103,7 @@ if (!function_exists('prepare_menu')) {
         return $menu;
     }
 }
+
 
 
 /*

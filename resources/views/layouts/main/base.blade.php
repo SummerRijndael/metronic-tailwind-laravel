@@ -1,8 +1,13 @@
 <!DOCTYPE html>
-<html class="h-full" data-kt-theme="true" data-kt-theme-mode="light" dir="ltr" lang="en">
+<html class="h-full" data-kt-theme="false" data-kt-theme-mode="dark" dir="ltr" lang="en">
 
 <head>
 	@include('layouts.partials.head')
+	
+	<script>
+   		 window.userThemeSetting = '{{ Auth::user()->settings['appearance']['theme'] ?? 'mama' }}'; 
+	</script>
+
 	@vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 

@@ -40,7 +40,7 @@ return [
                     'type' => 'route',
                     'title' => 'User Profile',
                     'icon' => null,
-                    'route' => 'myprofile',
+                    'route' => 'profile.show',
                     'url' => null,
                     'external' => false,
                     'children' => [],
@@ -93,7 +93,7 @@ return [
         [
             'type' => 'url',
             'title' => '@keenthemes',
-            'icon' => null,
+            'icon' => 'assets/media/brand-logos/x-dark.svg',
             'route' => null,
             'url' => 'https://keenthemes.com/metronic/tailwind/docs/',
             'external' => true,
@@ -102,7 +102,7 @@ return [
         [
             'type' => 'url',
             'title' => '@keenthemes_hub',
-            'icon' => null,
+            'icon' => 'assets/media/brand-logos/slack.svg',
             'route' => null,
             'url' => 'https://github.com/keenthemes/',
             'external' => true,
