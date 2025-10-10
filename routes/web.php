@@ -18,20 +18,19 @@ Route::get('/dashboard', function () {
 
 // Profile controller routes (protected)
 Route::middleware('auth')->group(function () {
+
     Route::get('/profile/{user?}', [ProfileController::class, 'show'])->name('profile.show');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile_settings', [ProfileController::class, 'settings'])->name('profile_settings.show');
 
     Route::post('/user/two-factor-enable', [TwoFactorController::class, 'enable'])->name('user.two-factor.enable');
     Route::post('/user/two-factor-disable', [TwoFactorController::class, 'disable'])->name('user.two-factor.disable');
 
     Route::get('/2fa/setup', [TwoFactorSetupController::class, 'show'])->name('2fa.setup');
     Route::post('/2fa/setup', [TwoFactorSetupController::class, 'verify'])->name('2fa.setup.verify');
-});
 
-Route::get('/profile_settings', function () {
-    return view('pages.user.settings');
-})->middleware(['auth', 'verified'])->name('profile_settings');
+});
 
 Route::get('/userslist', function () {
     return view('pages.user.userlist');

@@ -13,31 +13,29 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
 
-class FortifyServiceProvider extends ServiceProvider
-{
+
+class FortifyServiceProvider extends ServiceProvider {
     /**
      * Register any application services.
      */
-    public function register(): void
-    {
+    public function register(): void {
         //
     }
 
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
-    {
+    public function boot(): void {
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
-
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())) . '|' . $request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
         });
@@ -46,13 +44,15 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });
 
-         // --- Add your view definitions here ---
-      
-        Fortify::loginView(fn () => view('auth.login'));
-        Fortify::registerView(fn () => view('auth.register'));
-        Fortify::requestPasswordResetLinkView(fn () => view('auth.forgot-password'));
-        Fortify::resetPasswordView(fn ($request) => view('auth.reset-password', ['request' => $request]));
-        Fortify::twoFactorChallengeView(fn () => view('auth.two-factor-challenge'));
+        // --- Add your view definitions here ---
 
+        Fortify::loginView(fn() => view('auth.login'));
+        Fortify::registerView(fn() => view('auth.register'));
+        Fortify::requestPasswordResetLinkView(fn() => view('auth.forgot-password'));
+        Fortify::resetPasswordView(fn($request) => view('auth.reset-password', ['request' => $request]));
+        Fortify::twoFactorChallengeView(fn() => view('auth.two-factor-challenge'));
+
+        Fortify::redirects('register', '/dashboard');
+        Fortify::redirects('login', '/dashboard');
     }
 }

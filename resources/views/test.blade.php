@@ -5,7 +5,7 @@
     <x-modal 
         id="welcome_modal" 
         title="Welcome to Metronic" 
-        :autoShow="false"
+        :autoShow="true"
         :image="'assets/media/illustrations/21.svg'"
     >
         Hello {{ auth()->user()->name }}! we're thrilled to have you on board and excited for the journey ahead together.

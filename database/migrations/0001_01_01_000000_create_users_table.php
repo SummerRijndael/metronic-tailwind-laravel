@@ -4,13 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
+    public function up(): void {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->uuid('public_id')->unique(); // <-- Add this line for UUID
@@ -21,7 +19,7 @@ return new class extends Migration
             $table->string('password');
             $table->timestamp('password_changed_at')->nullable();
             $table->rememberToken();
-
+            $table->bigInteger('mobile')->nullable();
             $table->date('bday')->nullable();
             $table->integer('age')->nullable();
             $table->string('sex', 10)->nullable();
@@ -29,8 +27,6 @@ return new class extends Migration
             $table->string('avatar')->nullable()->default('blank.png');
             $table->json('settings')->nullable();
 
-            $table->string('role_type')->nullable();
-            $table->json('permissions')->nullable();
             $table->json('activity_ids')->nullable();
 
             $table->boolean('is_active')->default(true);
@@ -56,8 +52,7 @@ return new class extends Migration
     /**
      * Reverse the migrations.
      */
-    public function down(): void
-    {
+    public function down(): void {
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');

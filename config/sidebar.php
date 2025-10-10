@@ -49,7 +49,7 @@ return [
                     'type' => 'route',
                     'title' => 'Settings',
                     'icon' => null,
-                    'route' => 'profile_settings',
+                    'route' => 'profile_settings.show',
                     'url' => null,
                     'external' => false,
                     'children' => [],

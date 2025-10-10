@@ -32,9 +32,9 @@ Breadcrumbs::for('profile.show', function (BreadcrumbTrail $trail, ?User $user =
 });
 
 // Profile settings page
-Breadcrumbs::for('profile_settings', function (BreadcrumbTrail $trail) {
+Breadcrumbs::for('profile_settings.show', function (BreadcrumbTrail $trail) {
     $trail->parent('myaccount');
-    $trail->push('User Settings', route('profile_settings'));
+    $trail->push('Account Settings', route('profile_settings.show') );
 });
 
 // My Account page

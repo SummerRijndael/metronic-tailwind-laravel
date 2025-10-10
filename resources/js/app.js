@@ -1,5 +1,10 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
+import flatpickr from "flatpickr";
+import "flatpickr/dist/flatpickr.css";
+
+// Optional: set defaults (e.g., date format)
+flatpickr.defaultConfig.dateFormat = "Y-m-d";
 
 // Start Alpine.js
 window.Alpine = Alpine;
