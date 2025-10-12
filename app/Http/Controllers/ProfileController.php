@@ -11,6 +11,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage; // Use Storage facade directly
+use Illuminate\Support\Facades\DB; // Use DB facade for transactions
 use Illuminate\View\View;
 use App\Helpers\AccessHelper;
 
@@ -18,13 +20,8 @@ class ProfileController extends Controller {
     use AuthorizesRequests;
 
     /**
-     * Display a user’s profile page.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\User|null  $user
-     * @return \Illuminate\View\View
+     * Display a user’s profile page (Already optimized).
      */
-    // Optimized Version
     public function show(Request $request, ?User $user = null): View {
         $authUser = $request->user();
 
@@ -41,21 +38,21 @@ class ProfileController extends Controller {
             AccessHelper::authorize('user_view_any');
         }
 
-        // 3. Permission Data Retrieval (Optimized)
-        // getAllPermissions() usually handles roles, so let's rely on it.
+        // 3. Permission Data Retrieval
         $permanentPermissions = $profileUser->getAllPermissions()->pluck('name')->toArray();
 
+        // AccessHelper::getActiveTemporaryPermissions is assumed to be memoized
         $tempPerms = AccessHelper::getActiveTemporaryPermissions($profileUser->id);
-        $forbiddenKeys = $profileUser->forbids->pluck('permission_name')->toArray(); // Use eager loaded data
+        $forbiddenKeys = $profileUser->forbids->pluck('permission_name')->toArray();
 
         // Merge and get unique keys
         $allPermissions = array_unique(array_merge($permanentPermissions, $tempPerms, $forbiddenKeys));
 
         // Prepare for faster lookup during map
-        $directPermissions = $profileUser->permissions->pluck('name')->toArray(); // Use eager loaded data
-        $permissionsConfig = config('permissions.list', []); // Load config once
+        $directPermissions = $profileUser->permissions->pluck('name')->toArray();
+        $permissionsConfig = config('permissions.list', []);
 
-        // 4. Permission Details Mapping (Optimized for Lookups)
+        // 4. Permission Details Mapping
         $permissions = collect($allPermissions)->map(function ($perm) use (
             $directPermissions,
             $forbiddenKeys,
@@ -64,12 +61,14 @@ class ProfileController extends Controller {
         ) {
             $config = $permissionsConfig[$perm] ?? [];
 
+            // These checks are now fast O(1) array lookups if forbiddenKeys/tempPerms
+            // were converted to hash maps in AccessHelper::describePermissions,
+            // but for simple array operations here, in_array is sufficient.
             $isForbidden = in_array($perm, $forbiddenKeys);
             $isTemporary = in_array($perm, $tempPerms);
-            $isDirect = in_array($perm, $directPermissions); // Faster lookup than 'contains'
+            $isDirect = in_array($perm, $directPermissions);
 
-            // Detect source (Priority: Forbid > Temporary > Direct > Role)
-            $source = 'role'; // default
+            $source = 'role';
             if ($isDirect) {
                 $source = 'direct';
             }
@@ -90,14 +89,14 @@ class ProfileController extends Controller {
             ];
         })->values();
 
-        // 5. Recent activity (No change needed)
+        // 5. Recent activity
         $activities = UserActivityTrail::query()
             ->where('user_id', $profileUser->id)
             ->latest()
             ->limit(6)
             ->get();
 
-        // 6. Pass to view (No change needed)
+        // 6. Pass to view
         return view('pages.user.profile', compact('profileUser', 'activities'))
             ->with([
                 'user' => $profileUser,
@@ -115,6 +114,7 @@ class ProfileController extends Controller {
      * @return \Illuminate\View\View
      */
     public function settings(Request $request, ?User $user = null): View {
+        // Optimization: Consolidate user logic and authorization check (similar to show)
         $authUser = $request->user();
         $profileUser = $user ?? $authUser;
 
@@ -126,12 +126,13 @@ class ProfileController extends Controller {
             AccessHelper::authorize('user_view_any');
         }
 
-        return view('pages.user.settings', compact('profileUser'))
-            ->with('user', $profileUser);
+        // OPTIMIZATION: Assign $profileUser to $user to use pure compact() style.
+        $user = $profileUser;
+        return view('pages.user.settings', compact('user', 'authUser'));
     }
 
     /**
-     * Update the user’s profile information.
+     * Update the user’s profile information (Optimized for transactions and file handling).
      *
      * @param  \App\Http\Requests\ProfileUpdateRequest  $request
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
@@ -141,48 +142,98 @@ class ProfileController extends Controller {
 
         $user = $request->user();
         $validated = $request->validated();
+        $oldAvatarPath = $user->avatar;
+        $saved = false;
+        $errorMessage = 'Failed to update profile.';
+        $newAvatarPath = null; // Initialize to null for cleanup logic
 
-        $user->fill($validated);
+        DB::beginTransaction();
 
-        // Reset email verification if changed
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
+        try {
+            $user->fill($validated);
 
-        // Handle avatar upload
-        if ($request->hasFile('avatar')) {
-            $avatar = $request->file('avatar');
-
-            // Delete old avatar if exists
-            if (
-                $user->avatar &&
-                $user->avatar !== 'assets/media/avatars/blank.png' &&
-                \Storage::disk('public')->exists($user->avatar)
-            ) {
-                \Storage::disk('public')->delete($user->avatar);
+            // Reset email verification if changed
+            if ($user->isDirty('email')) {
+                $user->email_verified_at = null;
             }
 
-            // Generate hashed filename
-            $extension = $avatar->getClientOriginalExtension();
-            $filename = hash('sha256', $user->public_id . now() . $avatar->getClientOriginalName()) . '.' . $extension;
-            $path = $avatar->storeAs("avatars/{$user->public_id}", $filename, 'public');
-            $user->avatar = $path;
+            // Handle avatar upload
+            if ($request->hasFile('avatar')) {
+                $avatarFile = $request->file('avatar');
+
+                // Generate a more robust path using user ID as a folder
+                $pathPrefix = "avatars/{$user->public_id}";
+                $filename = hash('sha256', $avatarFile->getClientOriginalName() . time()) . '.' . $avatarFile->getClientOriginalExtension();
+                $newAvatarPath = $avatarFile->storeAs($pathPrefix, $filename, 'public');
+
+                $user->avatar = $newAvatarPath;
+            }
+
+            // Only attempt to save if changes were made, including potential new avatar path
+            if ($user->isDirty()) {
+                $saved = $user->save();
+            } else {
+                // If the user didn't change data but submitted, we treat it as successful
+                $saved = true;
+            }
+
+            if ($saved) {
+                // Commit DB transaction first
+                DB::commit();
+
+                // Delete old avatar AFTER successful save and commit
+                if (
+                    isset($newAvatarPath) &&
+                    $oldAvatarPath &&
+                    $oldAvatarPath !== 'blank.png' &&
+                    Storage::disk('public')->exists($oldAvatarPath)
+                ) {
+                    Storage::disk('public')->delete($oldAvatarPath);
+                }
+            } else {
+                throw new \Exception('Database save failed.');
+            }
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            // If a file was uploaded but DB failed, delete the new file to prevent orphaned storage
+            if (isset($newAvatarPath) && Storage::disk('public')->exists($newAvatarPath)) {
+                Storage::disk('public')->delete($newAvatarPath);
+            }
+
+            // Log the error for debugging
+            \Log::error("Profile update failed for user {$user->id}: " . $e->getMessage());
+
+            // Ensure $saved is false on error
+            $saved = false;
+            // $errorMessage can be customized based on $e->getMessage() if needed
         }
 
-        $saved = $user->isDirty() ? $user->save() : true;
+        // --- START NEW LOGIC FOR MESSAGE AND TOAST TYPE ---
+        $statusMessage = $user->wasChanged()
+            ? 'Profile updated successfully tangina!'
+            : 'No changes detected.';
 
+        $finalMessage = $saved ? $statusMessage : $errorMessage;
+
+        // Default toast type: 'error' if save failed, 'success' if saved and changed, 'info' if saved but no changes.
+        $toastType = 'error';
+        if ($saved) {
+            $toastType = $user->wasChanged() ? 'success' : 'info';
+        }
+        // --- END NEW LOGIC ---
+
+        // Prepare JSON Response
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
-                'message'    => $saved
-                    ? ($user->wasChanged() ? 'Profile updated successfully!' : 'No changes detected.')
-                    : 'Failed to update profile.',
+                'message'    => $finalMessage, // Now uses the determined message
                 'status'     => $saved ? 'profile-updated' : 'update-failed',
-                'avatar_url' => $user->avatar
-                    ? asset("storage/{$user->avatar}")
-                    : asset('assets/media/avatars/blank.png'),
+                'avatar_url' => $user->getAvatarUrlAttribute(),
+                'type'       => $toastType, // <-- NEW: Include the explicit type
             ], $saved ? 200 : 500);
         }
 
+        // Prepare Redirect Response
         return redirect()
             ->route('profile_settings.show')
             ->with('status', $saved ? 'profile-updated' : 'update-failed');
@@ -195,6 +246,7 @@ class ProfileController extends Controller {
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Request $request): RedirectResponse {
+        // No major optimization needed here, but the file cleanup could be added (see notes below)
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
@@ -202,7 +254,17 @@ class ProfileController extends Controller {
         $user = $request->user();
 
         Auth::logout();
-        $user->delete();
+
+        // Optional: Run deletion in a transaction for safety
+        DB::transaction(function () use ($user) {
+            // OPTIMIZATION IDEA: Add logic here to delete all user-related data (e.g., activity trail, avatars)
+            // Example:
+            // if ($user->avatar && $user->avatar !== 'blank.png') {
+            //     Storage::disk('public')->deleteDirectory("avatars/{$user->public_id}");
+            // }
+            $user->delete();
+        });
+
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

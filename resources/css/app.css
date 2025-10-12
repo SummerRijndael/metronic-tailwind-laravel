@@ -3,150 +3,438 @@
 @tailwind utilities;
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans:
+        "Instrument Sans", ui-sans-serif, system-ui, sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
 }
 
 /* Metronic Custom Styles */
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
+    html {
+        scroll-behavior: smooth;
+    }
 
-  body {
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+    body {
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
 }
 
 @layer components {
-  /* Metronic Button Styles */
-  .kt-btn {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
-  }
+    /* Metronic Button Styles */
+    .kt-btn {
+        @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    }
 
-  .kt-btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
-  }
+    .kt-btn-primary {
+        @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+    }
 
-  .kt-btn-outline {
-    @apply border border-border bg-transparent text-foreground hover:bg-background hover:text-foreground;
-  }
+    .kt-btn-outline {
+        @apply border border-border bg-transparent text-foreground hover:bg-background hover:text-foreground;
+    }
 
-  .kt-btn-ghost {
-    @apply bg-transparent text-foreground hover:bg-background;
-  }
+    .kt-btn-ghost {
+        @apply bg-transparent text-foreground hover:bg-background;
+    }
 
-  .kt-btn-icon {
-    @apply p-2;
-  }
+    .kt-btn-icon {
+        @apply p-2;
+    }
 
-  .kt-btn-sm {
-    @apply px-3 py-1.5 text-xs;
-  }
+    .kt-btn-sm {
+        @apply px-3 py-1.5 text-xs;
+    }
 
-  /* Card Styles */
-  .kt-card {
-    @apply bg-background border border-border rounded-lg shadow-sm;
-  }
+    /* Card Styles */
+    .kt-card {
+        @apply bg-background border border-border rounded-lg shadow-sm;
+    }
 
-  .kt-card-header {
-    @apply flex items-center justify-between p-5 border-b border-border;
-  }
+    .kt-card-header {
+        @apply flex items-center justify-between p-5 border-b border-border;
+    }
 
-  .kt-card-title {
-    @apply text-lg font-semibold text-foreground;
-  }
+    .kt-card-title {
+        @apply text-lg font-semibold text-foreground;
+    }
 
-  .kt-card-content {
-    @apply p-5;
-  }
+    .kt-card-content {
+        @apply p-5;
+    }
 
-  .kt-card-footer {
-    @apply flex items-center justify-between p-5 border-t border-border;
-  }
+    .kt-card-footer {
+        @apply flex items-center justify-between p-5 border-t border-border;
+    }
 
-  /* Menu Styles */
-  .kt-menu {
-    @apply bg-background border border-border rounded-lg shadow-lg;
-  }
+    /* Menu Styles */
+    .kt-menu {
+        @apply bg-background border border-border rounded-lg shadow-lg;
+    }
 
-  .kt-menu-item {
-    @apply relative;
-  }
+    .kt-menu-item {
+        @apply relative;
+    }
 
-  .kt-menu-link {
-    @apply flex items-center px-4 py-2 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors;
-  }
+    .kt-menu-link {
+        @apply flex items-center px-4 py-2 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors;
+    }
 
-  .kt-menu-icon {
-    @apply w-5 h-5 mr-3 text-muted-foreground;
-  }
+    .kt-menu-icon {
+        @apply w-5 h-5 mr-3 text-muted-foreground;
+    }
 
-  .kt-menu-title {
-    @apply flex-1;
-  }
+    .kt-menu-title {
+        @apply flex-1;
+    }
 
-  .kt-menu-arrow {
-    @apply ml-auto;
-  }
+    .kt-menu-arrow {
+        @apply ml-auto;
+    }
 
-  /* Container Styles */
-  .kt-container-fixed {
-    @apply container mx-auto px-4 lg:px-8;
-  }
+    /* Container Styles */
+    .kt-container-fixed {
+        @apply container mx-auto px-4 lg:px-8;
+    }
 
-  /* Header Styles */
-  .kt-header {
-    @apply bg-background border-b border-border;
-  }
+    /* Header Styles */
+    .kt-header {
+        @apply bg-background border-b border-border;
+    }
 
-  /* Wrapper Styles */
-  .kt-wrapper {
-    @apply min-h-0;
-  }
+    /* Wrapper Styles */
+    .kt-wrapper {
+        @apply min-h-0;
+    }
 
-  /* Link Styles */
-  .kt-link {
-    @apply text-blue-600 hover:text-blue-800 font-medium transition-colors;
-  }
+    /* Link Styles */
+    .kt-link {
+        @apply text-blue-600 hover:text-blue-800 font-medium transition-colors;
+    }
 
-  .kt-link-underlined {
-    @apply underline;
-  }
+    .kt-link-underlined {
+        @apply underline;
+    }
 
-  .kt-link-dashed {
-    @apply border-b border-dashed border-current;
-  }
+    .kt-link-dashed {
+        @apply border-b border-dashed border-current;
+    }
 
-  /* Toggle Group */
-  .kt-toggle-group {
-    @apply inline-flex rounded-lg border border-border;
-  }
+    /* Toggle Group */
+    .kt-toggle-group {
+        @apply inline-flex rounded-lg border border-border;
+    }
 
-  .kt-toggle-group .kt-btn {
-    @apply rounded-none border-0 first:rounded-l-lg last:rounded-r-lg;
-  }
+    .kt-toggle-group .kt-btn {
+        @apply rounded-none border-0 first:rounded-l-lg last:rounded-r-lg;
+    }
+
+    /* === LOADING BUTTON COMPONENT STYLES === */
+    .kt-btn-loading {
+        position: relative;
+        pointer-events: none;
+        overflow: hidden;
+        /* CRITICAL: Neutralize ALL padding to prevent clipping when dimensions are locked by JS */
+        padding: 0 !important;
+    }
+
+    /* Ensure the original text is completely hidden (although JS removes it, this is a safeguard) */
+    .kt-btn-loading .kt-btn-text {
+        display: none !important;
+    }
+
+    .kt-loader-content {
+        /* Robust Centering: Always position in the true center of the button */
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        gap: 4px;
+        color: inherit; /* Inherit the button's text color */
+        white-space: nowrap;
+    }
+
+    /* Dot animation styles */
+    .kt-loader-dot {
+        width: 6px;
+        height: 6px;
+        background-color: currentColor;
+        border-radius: 50%;
+        display: inline-block;
+        animation: dot-pulse 1s infinite ease-in-out;
+    }
+
+    .kt-loader-dot:nth-child(1) {
+        animation-delay: 0s;
+    }
+    .kt-loader-dot:nth-child(2) {
+        animation-delay: 0.15s;
+    }
+    .kt-loader-dot:nth-child(3) {
+        animation-delay: 0.3s;
+    }
+
+    @keyframes dot-pulse {
+        0%,
+        80%,
+        100% {
+            transform: scale(0.6);
+            opacity: 0.6;
+        }
+        40% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
 }
 
 @layer utilities {
-  /* Custom spacing utilities */
-  .space-x-2\.5 > * + * {
-    margin-left: 0.625rem;
-  }
+    /* Custom spacing utilities */
+    .space-x-2\.5 > * + * {
+        margin-left: 0.625rem;
+    }
 
-  .gap-7\.5 {
-    gap: 1.875rem;
-  }
+    .gap-7\.5 {
+        gap: 1.875rem;
+    }
 
-  /* Hide scrollbar but allow scrolling */
-  .scrollbar-hidden {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+    /* Hide scrollbar but allow scrolling */
+    .scrollbar-hidden {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 
-  .scrollbar-hidden::-webkit-scrollbar {
-    display: none;
-  }
+    .scrollbar-hidden::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* =======================================================================
+    [START] IMAGE UPLOADER COMPONENT STYLES (NO GLOBAL OVERRIDES)
+    ======================================================================= */
+
+/* 1. CSS VARIABLES (Sizing and positioning variables) */
+:root {
+    --color-circle-border: #f8f8f8;
+    --color-edit-icon: #757575;
+
+    /* --- DEFAULT LG SIZE (Used if no class is applied) --- */
+    --img-size: 12rem;
+    --border-width: 0.375rem;
+    --btn-size: 2.56rem;
+
+    /* Calculated offset for seamless curve alignment */
+    --btn-offset-x: calc(var(--border-width) * 0.5);
+    --btn-offset-y: calc(var(--border-width) * 0.5);
+}
+
+/* 2. AVATAR RESIZE CLASSES (Override variables based on $size prop) */
+.avatar-size-xxl {
+    --img-size: 16rem;
+    --border-width: 0.5rem;
+    --btn-size: 3.4rem;
+}
+.avatar-size-xl {
+    --img-size: 14rem;
+    --border-width: 0.4375rem;
+    --btn-size: 2.9rem;
+}
+.avatar-size-lg {
+    --img-size: 10rem;
+    --border-width: 0.3125rem;
+    --btn-size: 2.1rem;
+}
+.avatar-size-md {
+    --img-size: 8rem;
+    --border-width: 0.25rem;
+    --btn-size: 1.7rem;
+}
+.avatar-size-sm {
+    --img-size: 5rem;
+    --border-width: 0.1875rem;
+    --btn-size: 1.05rem;
+}
+.avatar-size-xsm {
+    --img-size: 4rem;
+    --border-width: 0.125rem;
+    --btn-size: 0.875rem;
+}
+
+/* 3. CORE COMPONENT STYLES (@layer components for better management) */
+@layer components {
+    /* AVATAR WRAPPER */
+    .avatar-upload {
+        position: relative;
+        /* Wrapper size is now driven by variable */
+        width: var(--img-size);
+        height: var(--img-size);
+    }
+
+    /* PREVIEW CONTAINER */
+    .avatar-preview-size {
+        width: 100%;
+        height: 100%;
+        border-radius: 9999px;
+        overflow: hidden;
+
+        /* Dimensions from variables */
+        border-width: var(--border-width);
+        border-color: var(--color-circle-border);
+        background-color: white;
+
+        /* Custom shadow (re-used from your original style) */
+        box-shadow:
+            0px 4px 10px 0px rgba(0, 0, 0, 0.15),
+            0px 1px 3px 0px rgba(0, 0, 0, 0.08);
+    }
+
+    /* BUTTON PLACEMENT */
+    .avatar-edit {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 10;
+    }
+
+    /* EDIT BUTTON STYLE */
+    .edit-button-style {
+        /* Size from variable */
+        width: var(--btn-size);
+        height: var(--btn-size);
+
+        /* Translation from variable for seamless curve alignment */
+        transform: translate(var(--btn-offset-x), var(--btn-offset-y));
+
+        /* Re-applying necessary styles from your original component */
+        @apply bg-white shadow-lg cursor-pointer transition-all duration-200 border-2;
+
+        border-radius: 9999px;
+    }
+
+    /* Icon inside the button scales with the button size */
+    .edit-button-style svg {
+        width: 40%;
+        height: 40%;
+    }
+
+    /* ERROR MESSAGE TRANSITION (must be in a component or utility layer to use Tailwind classes) */
+    .error-message {
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* =======================================================================
+        4. CSS-DRIVEN STATE LOGIC (CRITICAL FOR JS)
+        ======================================================================= */
+
+    /* ICON VISIBILITY LOGIC */
+
+    /* If IS NOT uploaded, hide the REMOVE icon (Default State) */
+    .avatar-upload:not(.is-uploaded) [data-icon="remove"] {
+        display: none !important;
+    }
+
+    /* If IS uploaded, hide the PENCIL icon */
+    .avatar-upload.is-uploaded [data-icon="pencil"] {
+        display: none !important;
+    }
+
+    /* BUTTON HOVER & STYLE LOGIC */
+
+    /* When an image is uploaded (is-uploaded): Change button hover to RED for removal */
+    .avatar-upload.is-uploaded [data-action="edit-button"] {
+        @apply border-red-200;
+    }
+    .avatar-upload.is-uploaded [data-action="edit-button"]:hover {
+        @apply bg-red-100;
+    }
+
+    /* When NO image is uploaded (not .is-uploaded): Default hover state for upload */
+    .avatar-upload:not(.is-uploaded) [data-action="edit-button"] {
+        @apply border-gray-200;
+    }
+    .avatar-upload:not(.is-uploaded) [data-action="edit-button"]:hover {
+        @apply bg-gray-100;
+    }
+
+    /* CURSOR LOGIC */
+    .avatar-upload:not(.is-uploaded) [data-action="preview-container"] {
+        cursor: pointer;
+    }
+    .avatar-upload.is-uploaded [data-action="preview-container"] {
+        cursor: default;
+    }
+}
+
+.avatar-align-left {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+.avatar-align-center {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+/* [END] IMAGE UPLOADER COMPONENT STYLES */
+
+/* Load Inter font */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+/* Custom styling for the 3-state segmented control */
+.segmented-control {
+    display: inline-flex;
+    border-radius: 0.5rem;
+    background-color: #f3f4f6;
+    padding: 2px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.segmented-control input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.segmented-control label {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease-in-out;
+    text-align: center;
+    min-width: 60px; /* Ensure labels are wide enough */
+}
+
+/* INHERIT - Default/Inactive State */
+.segmented-control input[value="inherit"]:not(:checked) + label:hover {
+    background-color: #e5e7eb;
+}
+/* INHERIT - Active State */
+.segmented-control input[value="inherit"]:checked + label {
+    background-color: #ffffff;
+    color: #4f46e5; /* Primary */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ALLOW - Active State */
+.segmented-control input[value="allow"]:checked + label {
+    background-color: #10b981; /* Secondary/Allow */
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* BLOCK - Active State */
+.segmented-control input[value="block"]:checked + label {
+    background-color: #ef4444; /* Danger/Block */
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }

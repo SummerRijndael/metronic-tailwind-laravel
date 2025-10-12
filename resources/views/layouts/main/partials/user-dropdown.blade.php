@@ -2,13 +2,13 @@
     data-kt-dropdown-placement="bottom-start" data-kt-dropdown-placement-rtl="bottom-end" data-kt-dropdown-trigger="click">
     <div class="shrink-0 cursor-pointer" data-kt-dropdown-toggle="true">
         <img alt="" class="size-9 shrink-0 cursor-pointer rounded-full border-2 border-mono/25"
-            src="{{ !Auth::user()->avatar == 'blank.png' ? asset('storage/' . Auth::user()->avatar) : asset('assets/media/avatars/blank.png') }}" />
+            src="{{ Auth::user()->avatar_url }}" />
     </div>
     <div class="kt-dropdown-menu w-[250px]" data-kt-dropdown-menu="true">
         <div class="flex items-center justify-between gap-1.5 px-2.5 py-1.5">
             <div class="flex items-center gap-2">
                 <img alt="" class="size-9 shrink-0 rounded-full border-2 border-green-500"
-                    src="{{ !Auth::user()->avatar == 'blank.png' ? asset('storage/' . Auth::user()->avatar) : asset('assets/media/avatars/blank.png') }}" />
+                    src="{{ Auth::user()->avatar_url }}" />
                 <div class="flex flex-col gap-1.5">
                     <span class="text-sm font-semibold leading-none text-foreground">
                         {{ auth()->user()->name }}

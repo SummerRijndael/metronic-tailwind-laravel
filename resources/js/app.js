@@ -1,121 +1,86 @@
-import './bootstrap';
-import Alpine from 'alpinejs';
+// ---- PATCHED Livewire-safe app.js ----
+
+import "./bootstrap";
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.css";
 
-// Optional: set defaults (e.g., date format)
-flatpickr.defaultConfig.dateFormat = "Y-m-d";
+// --- Custom Components ---
+import "./components/loading-button";
+import "./components/form-submission";
+import "./components/custom-image-uploader";
 
-// Start Alpine.js
-window.Alpine = Alpine;
-Alpine.start();
+// --- Helper: Safe Init (no double binding) ---
+function safeInit(callback, name) {
+    try {
+        callback();
+        // console.debug(`[MetronicCore] Initialized: ${name}`);
+    } catch (e) {
+        console.warn(`[MetronicCore] ${name} failed:`, e);
+    }
+}
 
-// Metronic Core JavaScript functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize drawer functionality
-    initDrawers();
+// --- DOM Ready ---
+document.addEventListener("DOMContentLoaded", function () {
+    // Initialize once at full load
+    flatpickr.defaultConfig.dateFormat = "Y-m-d";
+    document
+        .querySelectorAll(".kt-datepicker")
+        .forEach((el) => flatpickr(el, { allowInput: true }));
 
-    // Initialize menu functionality
-    initMenus();
-
-    // Initialize sticky headers
-    initStickyHeaders();
-
-    // Initialize modal functionality
-    initModals();
-    
+    safeInit(initDrawers, "Drawers");
+    safeInit(initKTMenu, "KTMenu");
+    safeInit(initStickyHeaders, "StickyHeaders");
+    safeInit(initModals, "Modals");
 });
 
-// Drawer functionality
+// --- Metronic Core Hooks ---
+function initKTMenu() {
+    // Only run if Metronic’s KTMenu exists
+    if (window.KTMenu?.init) {
+        window.KTMenu.init();
+    }
+}
+
 function initDrawers() {
-    const drawers = document.querySelectorAll('[data-kt-drawer]');
-
-    drawers.forEach(drawer => {
-        const toggles = document.querySelectorAll(`[data-kt-drawer-toggle="#${drawer.id}"]`);
-
-        toggles.forEach(toggle => {
-            toggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                drawer.classList.toggle('hidden');
-                drawer.classList.toggle('block');
-            });
-        });
-    });
+    if (window.KTDrawer?.init) {
+        window.KTDrawer.init();
+    }
 }
 
-// Menu functionality
-function initMenus() {
-    const menus = document.querySelectorAll('[data-kt-menu="true"]');
-
-    menus.forEach(menu => {
-        const items = menu.querySelectorAll('[data-kt-menu-item-toggle="dropdown"]');
-
-        items.forEach(item => {
-            const trigger = item.querySelector('[data-kt-menu-item-trigger="click"], [data-kt-menu-item-trigger="click|lg:hover"]');
-            const dropdown = item.querySelector('.kt-menu-dropdown');
-
-            if (trigger && dropdown) {
-                trigger.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    dropdown.classList.toggle('hidden');
-                });
-            }
-        });
-    });
-}
-
-// Sticky header functionality
 function initStickyHeaders() {
-    const stickyElements = document.querySelectorAll('[data-kt-sticky="true"]');
-
-    stickyElements.forEach(element => {
-        const stickyClass = element.getAttribute('data-kt-sticky-class') || 'kt-sticky';
-        const offset = parseInt(element.getAttribute('data-kt-sticky-offset')) || 0;
-
-        window.addEventListener('scroll', function() {
-            if (window.scrollY > offset) {
-                element.classList.add(...stickyClass.split(' '));
-            } else {
-                element.classList.remove(...stickyClass.split(' '));
-            }
-        });
-    });
+    if (window.KTSticky?.init) {
+        window.KTSticky.init();
+    }
 }
 
-// Modal functionality
 function initModals() {
-    const modalToggles = document.querySelectorAll('[data-kt-modal-toggle]');
-
-    modalToggles.forEach(toggle => {
-        toggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            const modalId = this.getAttribute('data-kt-modal-toggle');
-            const modal = document.querySelector(modalId);
-
-            if (modal) {
-                modal.classList.toggle('hidden');
-                modal.classList.toggle('flex');
-            }
-        });
-    });
+    if (window.KTModal?.init) {
+        window.KTModal.init();
+    }
 }
 
-// Close modals when clicking outside
-document.addEventListener('click', function(e) {
-    const modals = document.querySelectorAll('.kt-modal');
-
-    modals.forEach(modal => {
-        if (e.target === modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+// --- Livewire integration ---
+document.addEventListener("livewire:init", () => {
+    Livewire.hook("morph.updated", ({ component, el }) => {
+        // only re-init elements *inside* this Livewire component
+        if (el.closest("[data-livewire]")) {
+            safeInit(initKTMenu, "KTMenu (Livewire)");
+            safeInit(initDrawers, "Drawers (Livewire)");
+            safeInit(initStickyHeaders, "StickyHeaders (Livewire)");
+            safeInit(initModals, "Modals (Livewire)");
         }
+
+        // flatpickr cleanup & re-init
+        document.querySelectorAll(".kt-datepicker").forEach((el) => {
+            if (!el._flatpickr) flatpickr(el, { allowInput: true });
+        });
     });
 });
 
-// Export functions for use in other modules
+// --- Export for custom calls ---
 window.MetronicCore = {
     initDrawers,
-    initMenus,
+    initKTMenu,
     initStickyHeaders,
-    initModals
+    initModals,
 };
