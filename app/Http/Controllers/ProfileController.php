@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage; // Use Storage facade directly
 use Illuminate\Support\Facades\DB; // Use DB facade for transactions
 use Illuminate\View\View;
 use App\Helpers\AccessHelper;
+use Illuminate\Support\Facades\Response;
 
 class ProfileController extends Controller {
     use AuthorizesRequests;
@@ -211,7 +212,7 @@ class ProfileController extends Controller {
 
         // --- START NEW LOGIC FOR MESSAGE AND TOAST TYPE ---
         $statusMessage = $user->wasChanged()
-            ? 'Profile updated successfully tangina!'
+            ? 'Profile updated successfully!'
             : 'No changes detected.';
 
         $finalMessage = $saved ? $statusMessage : $errorMessage;
@@ -270,5 +271,51 @@ class ProfileController extends Controller {
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    public function list(Request $request) {
+        // Base query with eager-loaded roles for efficiency
+        $query = User::with('roles');
+
+        // ✅ Search
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('lastname', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // ✅ Sorting
+        $sortField = $request->input('sortField', 'created_at');
+        $sortOrder = $request->input('sortOrder', 'desc');
+
+        if (in_array($sortField, ['name', 'lastname', 'email', 'created_at'])) {
+            $query->orderBy($sortField, $sortOrder);
+        }
+
+        // ✅ Pagination
+        $page = (int) $request->input('page', 1);
+        $size = (int) $request->input('size', 10);
+        $totalCount = $query->count();
+
+        $users = $query->skip(($page - 1) * $size)
+            ->take($size)
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id'        => $user->public_id,
+                    'avatar' => $user->avatar,
+                    'full_name'    => trim("{$user->name} {$user->lastname}"),
+                    'email'       => $user->email,
+                    'role_name'   => $user->roles->pluck('name')->first() ?? '—',
+                    'created_at'  => $user->created_at->format('Y-m-d H:i:s'),
+                ];
+            });
+
+        return response()->json([
+            'data' => $users,
+            'totalCount' => $totalCount,
+        ]);
     }
 }

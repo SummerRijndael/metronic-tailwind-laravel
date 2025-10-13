@@ -9,12 +9,13 @@ use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Relations\HasMany; // Use for type hinting
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Contracts\Auth\MustVerifyEmail; // <-- 1. Import this
 // Note: UserForbid and UserTemporaryPermission models are explicitly defined below,
 // but their 'use' statements are not strictly required here if using ::class notation.
 
-class User extends Authenticatable {
+class User extends Authenticatable implements MustVerifyEmail {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles {
+    use HasFactory, Notifiable, TwoFactorAuthenticatable, TwoFactorAuthenticatable, HasRoles {
         // Alias the trait method so we can call it inside our override
         hasPermissionTo as protected traitHasPermissionTo;
     }
@@ -165,6 +166,7 @@ class User extends Authenticatable {
         'bday',
         'mobile',
         'avatar',
+        'password_changed_at',
     ];
 
     protected $hidden = [

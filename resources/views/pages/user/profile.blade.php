@@ -49,6 +49,7 @@
                                 'Full name' => $user->name . ' ' . $user->lastname,
                                 'Birthday' => $user->bday ? $user->bday->format('F j, Y') : 'Not specified',
                                 'Gender' => $user->sex ? $user->sex : 'Not specified',
+                                'Mobile' => $user->mobile ? $user->mobile : 'Not specified',
                                 'Address' => 'You don’t have any address yet',
                             ];
                         @endphp
@@ -64,7 +65,7 @@
 
                 <!-- Sidebar Footer -->
                 <div class="kt-card-footer justify-center border-t border-border p-4">
-
+                    <a class="kt-link" href="{{ route('profile_settings.show') }}#basic_settings">Edit Personal Details</a>
                 </div>
             </div>
         </div>
@@ -264,7 +265,8 @@
                                     </a>
                                 </td>
                                 <td class="max-w-16 py-2 text-end">
-                                    <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost kt-btn-primary" href="#">
+                                    <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost kt-btn-primary"
+                                        href="{{ route('profile_settings.show') }}#auth_email">
                                         <i class="ki-filled ki-notepad-edit">
                                         </i>
                                     </a>
@@ -278,7 +280,8 @@
                                     {{ $user->password_changed_at ? $user->password_changed_at->diffForHumans() : 'Never' }}
                                 </td>
                                 <td class="py-2 text-end">
-                                    <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost kt-btn-primary" href="#">
+                                    <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost kt-btn-primary"
+                                        href="{{ route('profile_settings.show') }}#auth_password">
                                         <i class="ki-filled ki-notepad-edit">
                                         </i>
                                     </a>
@@ -286,48 +289,37 @@
                             </tr>
                             <tr>
                                 <td class="py-3.5 font-normal text-gray-600">
-                                    Two Factror Auth
+                                    Two Factor Authentication
                                 </td>
                                 <td class="py-3.5 font-normal text-secondary-foreground">
-                                    {{ $user->two_factor_confirmed_at ? $user->two_factor_confirmed_at->format('F j, Y') : 'To be set' }}
+                                    {!! $user->two_factor_confirmed_at
+                                        ? '<span class="kt-badge kt-badge-outline kt-badge-success"> Active</span> | ' .
+                                            $user->two_factor_confirmed_at->format('F j, Y')
+                                        : 'To be set' !!}
                                 </td>
                                 <td class="py-3 text-end">
                                     @if (!$user->two_factor_confirmed_at)
                                         <a class="kt-link kt-link-underlined kt-link-dashed" href="#">
                                             Setup
                                         </a>
+                                    @else
+                                        <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost kt-btn-primary"
+                                            href="{{ route('profile_settings.show') }}#auth_two_factor">
+                                            <i class="ki-filled ki-notepad-edit">
+                                            </i>
+                                        </a>
                                     @endif
                                 </td>
                             </tr>
                             <tr>
                                 <td class="py-2 font-normal text-gray-600">
-                                    Sign-in with
+
                                 </td>
                                 <td class="py-0.5">
-                                    <div class="flex items-center gap-2.5">
-                                        <a class="border-input flex size-8 items-center justify-center rounded-full border bg-background"
-                                            href="#">
-                                            <img alt="" class="size-4" src="assets/media/brand-logos/google.svg">
-                                        </a>
-                                        <a class="border-input flex size-8 items-center justify-center rounded-full border bg-background"
-                                            href="#">
-                                            <img alt="" class="size-4"
-                                                src="assets/media/brand-logos/facebook.svg">
-                                        </a>
-                                        <a class="border-input flex size-8 items-center justify-center rounded-full border bg-background"
-                                            href="#">
-                                            <img alt="product logo" class="h-4 dark:hidden"
-                                                src="assets/media/brand-logos/apple-black.svg">
-                                            <img alt="product logo" class="light:hidden h-4"
-                                                src="assets/media/brand-logos/apple-white.svg">
-                                        </a>
-                                    </div>
+                                    <a class="kt-link" href="#">View All Active Sessions</a>
                                 </td>
                                 <td class="py-2 text-end">
-                                    <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost kt-btn-primary" href="#">
-                                        <i class="ki-filled ki-notepad-edit">
-                                        </i>
-                                    </a>
+
                                 </td>
                             </tr>
 

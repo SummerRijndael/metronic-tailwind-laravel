@@ -37,7 +37,7 @@ class UserFactory extends Factory {
     public function rbacOnly() {
         return $this->afterCreating(function (User $user) {
             $role = Role::inRandomOrder()->first() ?? Role::create(['name' => 'member']);
-            $user->assignRole($role);
+            $user->assignRole('user');
         });
     }
 

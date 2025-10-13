@@ -17,19 +17,12 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Profile controller routes (protected)
-Route::middleware('auth')->group(function () {
-
+Route::middleware('auth', 'verified')->group(function () {
     Route::get('/profile/{user?}', [ProfileController::class, 'show'])->name('profile.show');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/profile_settings', [ProfileController::class, 'settings'])->name('profile_settings.show');
-
-    Route::post('/user/two-factor-enable', [TwoFactorController::class, 'enable'])->name('user.two-factor.enable');
-    Route::post('/user/two-factor-disable', [TwoFactorController::class, 'disable'])->name('user.two-factor.disable');
-
-    Route::get('/2fa/setup', [TwoFactorSetupController::class, 'show'])->name('2fa.setup');
-    Route::post('/2fa/setup', [TwoFactorSetupController::class, 'verify'])->name('2fa.setup.verify');
-
+    Route::get('/users/load_list', [ProfileController::class, 'list'])->name('users.list');
 });
 
 Route::get('/userslist', function () {
@@ -46,4 +39,4 @@ Route::get('/test', function () {
     return view('test');
 })->middleware(['auth', 'verified'])->name('test');
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
