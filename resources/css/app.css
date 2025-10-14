@@ -383,58 +383,29 @@
 }
 /* [END] IMAGE UPLOADER COMPONENT STYLES */
 
-/* Load Inter font */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
-/* Custom styling for the 3-state segmented control */
-.segmented-control {
-    display: inline-flex;
-    border-radius: 0.5rem;
-    background-color: #f3f4f6;
-    padding: 2px;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+/* custom css  for user manager  */
+.container-wrapper {
+    max-width: 100%;
+    padding: 1rem 2rem;
 }
-
-.segmented-control input[type="radio"] {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
+/* Custom tab marker for the active state (Metronic doesn't define this by default) */
+.active-tab-marker {
+    border-bottom: 3px solid #10b981; /* Emerald-500: Technical accent color */
+    color: #1e293b;
+    font-weight: 600;
 }
-
-.segmented-control label {
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-    line-height: 1.25rem;
-    font-weight: 500;
-    cursor: pointer;
-    border-radius: 0.375rem;
-    transition: all 0.2s ease-in-out;
-    text-align: center;
-    min-width: 60px; /* Ensure labels are wide enough */
+/* High-density table style (Ensuring padding is minimal for dense views) */
+.dense-table th,
+.dense-table td {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
 }
-
-/* INHERIT - Default/Inactive State */
-.segmented-control input[value="inherit"]:not(:checked) + label:hover {
-    background-color: #e5e7eb;
+/* Custom scrollbar utility */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
 }
-/* INHERIT - Active State */
-.segmented-control input[value="inherit"]:checked + label {
-    background-color: #ffffff;
-    color: #4f46e5; /* Primary */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* ALLOW - Active State */
-.segmented-control input[value="allow"]:checked + label {
-    background-color: #10b981; /* Secondary/Allow */
-    color: #ffffff;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* BLOCK - Active State */
-.segmented-control input[value="block"]:checked + label {
-    background-color: #ef4444; /* Danger/Block */
-    color: #ffffff;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #94a3b8;
+    border-radius: 3px;
 }

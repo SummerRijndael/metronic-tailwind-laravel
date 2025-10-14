@@ -2,15 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class UserActivityTrail extends Model
-{
-    use HasFactory;
-
-    protected $table = 'user_activity_trails';
-
+class UserActivityTrail extends Model {
+    // Ensure all fields used in logUserActivity are fillable
     protected $fillable = [
         'user_id',
         'action',
@@ -20,16 +16,20 @@ class UserActivityTrail extends Model
         'meta',
     ];
 
-    // Optional: cast timestamps
+    // Ensure 'meta' is handled correctly as JSON
     protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
         'meta' => 'array',
     ];
 
-    // Relation to User
-    public function user()
-    {
+    /**
+     * Get the user that performed the activity.
+     *
+     * The relationship now correctly reflects the nullable user_id column.
+     * When the user is deleted, user_id is set to NULL, and this relationship
+     * will return null.
+     */
+    public function user(): BelongsTo {
         return $this->belongsTo(User::class);
+        // No explicit change is needed here, as BelongsTo automatically handles nullable foreign keys.
     }
 }

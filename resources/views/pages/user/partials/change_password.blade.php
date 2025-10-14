@@ -4,7 +4,7 @@
              Password
          </h3>
      </div>
-     <form data-ajax-form="true" method="POST" action="{{ route('password.update') }}">
+     <form data-ajax-form="true" method="POST" action="{{ route('user-password.update') }}">
          @csrf
          @method('PUT')
          <div class="kt-card-content grid gap-5">

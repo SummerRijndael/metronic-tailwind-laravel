@@ -76,8 +76,7 @@
                 <div class="mt-4 flex justify-center">
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit"
-                            class="text-sm text-gray-500 underline hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+                        <button type="submit" class="kt-btn kt-btn-outline text-sm text-gray-500">
                             Log Out
                         </button>
                     </form>

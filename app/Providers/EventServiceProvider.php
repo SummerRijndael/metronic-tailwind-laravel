@@ -5,45 +5,56 @@ namespace App\Providers;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Listeners\SendEmailVerificationNotification; // We keep this use statement
+use App\Listeners\LogSuccessfulLogin;
+use App\Listeners\LogSuccessfulLogout;
+use App\Listeners\LogNewUserRegistration;
 
-class EventServiceProvider extends ServiceProvider
-{
+class EventServiceProvider extends ServiceProvider {
+
+    /**
+     * CRITICAL FIX: Disable Event Auto-Discovery
+     * This stops the duplicate entries (like the '@handle' ones) caused by a conflict
+     * between manual registration and discovery.
+     *
+     * @var bool
+     */
+    public static $shouldDiscoverEvents = false;
+
     /**
      * The event listener mappings for the application.
+     * We now register each listener exactly ONCE.
      *
-     * @var array
+     * @var array<class-string, array<int, class-string>>
      */
     protected $listen = [
-        // Optional: map events to listener classes
+        Login::class => [
+            LogSuccessfulLogin::class,
+        ],
+        Logout::class => [
+            LogSuccessfulLogout::class,
+        ],
+        Registered::class => [
+            LogNewUserRegistration::class,
+            // Only one entry for the email verification listener:
+            SendEmailVerificationNotification::class,
+        ],
     ];
+
+    /**
+     * CRITICAL FIX: Configure email verification listeners.
+     * Leaving this empty prevents the framework's base ServiceProvider
+     * from registering the listener automatically (which was causing a duplicate).
+     */
+    protected function configureEmailVerification(): void {
+        // We handle registration above in $listen, so we block the framework's default here.
+    }
 
     /**
      * Register any events for your application.
      */
-    public function boot(): void
-    {
+    public function boot(): void {
         parent::boot();
-
-         // Log login with user name
-            \Illuminate\Support\Facades\Event::listen(Login::class, function ($event) {
-                $name = $event->user->name ?? $event->user->email ?? 'Unknown User';
-                logUserActivity(
-                    'login',
-                    "User {$name} logged in.",  // <-- include the name here
-                    ['icon' => 'ki-filled ki-entrance-left', 'color' => 'bg-accent/60']
-                );
-            });
-
-            // Log logout with user name
-            \Illuminate\Support\Facades\Event::listen(Logout::class, function ($event) {
-                if ($event->user) {
-                    $name = $event->user->name ?? $event->user->email ?? 'Unknown User';
-                    logUserActivity(
-                        'logout',
-                        "User {$name} logged out.", // <-- include the name here
-                        ['icon' => 'ki-filled ki-entrance-right', 'color' => 'bg-accent/60']
-                    );
-                }
-            });
     }
 }

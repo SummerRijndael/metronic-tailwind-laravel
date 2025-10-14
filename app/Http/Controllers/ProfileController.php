@@ -274,11 +274,42 @@ class ProfileController extends Controller {
     }
 
     public function list(Request $request) {
-        // Base query with eager-loaded roles for efficiency
-        $query = User::with('roles');
+        // 1. Authorization check
+        AccessHelper::authorize('user_view_any');
 
-        // ✅ Search
-        if ($search = $request->input('search')) {
+        // 2. Sanitize & Validate Inputs
+        $search     = trim(strip_tags($request->input('search', '')));
+        $sortField  = trim(strip_tags($request->input('sortField', 'created_at')));
+        $sortOrder  = strtolower(trim(strip_tags($request->input('sortOrder', 'desc'))));
+        $pageSize   = (int) $request->input('size', 10);
+        $page       = (int) $request->input('page', 1);
+
+        // 3. Normalize values & fallbacks
+        $validSortFields = ['id', 'name', 'lastname', 'email', 'created_at'];
+        $validSortOrders = ['asc', 'desc'];
+
+        if (!in_array($sortField, $validSortFields)) {
+            $sortField = 'created_at';
+        }
+
+        if (!in_array($sortOrder, $validSortOrders)) {
+            $sortOrder = 'desc';
+        }
+
+        if ($pageSize <= 0 || $pageSize > 100) {
+            $pageSize = 10;
+        }
+
+        if ($page <= 0) {
+            $page = 1;
+        }
+
+        // 4. Initial Query Setup (optimized)
+        $query = User::with(['roles:id,name'])
+            ->select('id', 'public_id', 'avatar', 'name', 'lastname', 'email', 'created_at', 'two_factor_secret');
+
+        // 5. Apply Search Filter (if provided)
+        if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('lastname', 'like', "%{$search}%")
@@ -286,36 +317,36 @@ class ProfileController extends Controller {
             });
         }
 
-        // ✅ Sorting
-        $sortField = $request->input('sortField', 'created_at');
-        $sortOrder = $request->input('sortOrder', 'desc');
+        // 6. Apply Sorting
+        $query->orderBy($sortField, $sortOrder);
 
-        if (in_array($sortField, ['name', 'lastname', 'email', 'created_at'])) {
-            $query->orderBy($sortField, $sortOrder);
-        }
+        // 7. Paginate and Execute Query
+        $usersPaginator = $query->paginate($pageSize, ['*'], 'page', $page);
 
-        // ✅ Pagination
-        $page = (int) $request->input('page', 1);
-        $size = (int) $request->input('size', 10);
-        $totalCount = $query->count();
+        // 8. Format Data Safely
+        $formattedUsers = $usersPaginator->getCollection()->map(function ($user) {
+            return [
+                'id'            => $user->public_id ?? '—',
+                'avatar'        => $user->avatar ?? '/images/default-avatar.png',
+                'full_name'     => trim(($user->name ?? '') . ' ' . ($user->lastname ?? '')) ?: 'Unnamed User',
+                'email'         => $user->email ?? '—',
+                'role_name'     => $user->roles->pluck('name')->first() ?? '—',
+                'created_at'    => optional($user->created_at)->format('Y-m-d H:i:s') ?? '—',
+                'twfa_stat' => !empty($user->two_factor_secret) ? 'Active' : 'Disabled',
+                'status'        => 'active', // Placeholder for real status logic
+                'statusLabel'   => 'Active',
+            ];
+        });
 
-        $users = $query->skip(($page - 1) * $size)
-            ->take($size)
-            ->get()
-            ->map(function ($user) {
-                return [
-                    'id'        => $user->public_id,
-                    'avatar' => $user->avatar,
-                    'full_name'    => trim("{$user->name} {$user->lastname}"),
-                    'email'       => $user->email,
-                    'role_name'   => $user->roles->pluck('name')->first() ?? '—',
-                    'created_at'  => $user->created_at->format('Y-m-d H:i:s'),
-                ];
-            });
+        // 9. Structure Response for KTDataTable
+        $response = [
+            'data'        => $formattedUsers,
+            'page'        => $usersPaginator->currentPage(),
+            'pageSize'    => $usersPaginator->perPage(),
+            'totalPages'  => $usersPaginator->lastPage(),
+            'totalCount'  => $usersPaginator->total(),
+        ];
 
-        return response()->json([
-            'data' => $users,
-            'totalCount' => $totalCount,
-        ]);
+        return response()->json($response);
     }
 }

@@ -1,40 +1,93 @@
 <?php
-/*
-prepare_menu - improved active detection + debug checklist
 
-What changed / why:
-- Children are normalized first so child active flags are known before parent checks.
-- Active detection uses the *current route name* (recommended) and supports wildcard patterns via Str::is().
-- URL detection compares absolute URLs (external) or request path (internal) safely without calling route() (which may require params).
-- Parent gets marked active when any child is active.
+/**
+ * MenuHelper Functions
+ *
+ * This file contains helper functions responsible for processing the sidebar
+ * menu configuration array before it is passed to a Blade component.
+ *
+ * It performs two main operations:
+ * 1. filter_menu_by_access: Removes menu items the current user is unauthorized to see.
+ * 2. prepare_menu: Normalizes data, handles icon paths, and calculates the 'active' state.
+ */
 
-Debug checklist (if still not working):
-1. Ensure you call prepare_menu() **before** passing the array to the component:
-   $primary = prepare_menu(config('menu.primary'));
-   <x-sidebar-menu :primaryMenu="$primary" />
-
-2. If you still don't see an `active` key, dump the data inside the component right after @props:
-   @php dd($primaryMenu); @endphp
-
-3. Dump the current route name to compare: dd(optional(request()->route())->getName(), request()->path());
-
-4. Clear caches after changing helpers: php artisan view:clear && php artisan cache:clear
-
-
-Implementation (drop into your helpers file or replace existing prepare_menu):
-*/
 use Illuminate\Support\Str;
+use App\Helpers\AccessHelper;
+
+if (!function_exists('filter_menu_by_access')) {
+    /**
+     * Recursively filters menu items based on user permissions.
+     *
+     * This function uses the 'permission' key on leaf items (type: 'route' or 'url')
+     * and ensures parent 'label' items are only kept if they have at least one
+     * authorized child remaining.
+     *
+     * @param array $menu The menu configuration array to filter.
+     * @return array The filtered menu array.
+     */
+    function filter_menu_by_access(array $menu): array {
+        $filteredMenu = [];
+
+        foreach ($menu as $item) {
+
+            // 1. Recurse into children first to get their filtered state.
+            if (!empty($item['children'])) {
+                $item['children'] = filter_menu_by_access($item['children']);
+            }
+
+            // 2. Permission Check for Leaf Items
+            // If a 'permission' key exists, check if the current user has it.
+            if (isset($item['permission'])) {
+                // Uses AccessHelper from App\Helpers\AccessHelper::can(permission_string).
+                if (AccessHelper::can($item['permission']) === false) {
+                    continue; // Skip this unauthorized leaf item.
+                }
+            }
+
+            // 3. Parent Visibility Check (The Empty Menu Fix)
+            // If the item is a group ('label') and has an empty 'children' array
+            // (meaning all children were filtered out in step 1 or 2), skip the parent.
+            if ($item['type'] === 'label') {
+                if (empty($item['children'])) {
+                    continue; // Skip the parent because it has no visible children.
+                }
+            }
+
+            // 4. If all checks pass (item is authorized or non-permissioned), add it.
+            $filteredMenu[] = $item;
+        }
+
+        return $filteredMenu;
+    }
+}
+
 
 if (!function_exists('prepare_menu')) {
-    function prepare_menu(array $menu): array
-    {
-        // Current request info
-        $currentRoute = optional(request()->route())->getName(); // may be null
-        $currentUrl = url()->current();
+    /**
+     * Prepares the raw menu array for rendering in the sidebar.
+     *
+     * This function runs after filtering and is responsible for:
+     * - Setting default values for missing optional keys (normalization).
+     * - Resolving icon paths.
+     * - Calculating the 'active' state based on the current request.
+     *
+     * @param array $menu The menu array (already filtered by access control).
+     * @return array The processed menu array with 'active' and 'hasChild' flags.
+     */
+    function prepare_menu(array $menu): array {
+
+        // 0. Filter by access control BEFORE checking active state
+        // This ensures 'active' calculations only run on visible items.
+        $menu = filter_menu_by_access($menu);
+
+        // Get current request data once for optimization
+        $currentRoute = optional(request()->route())->getName(); // The current Laravel named route
+        $currentUrl = url()->current();                         // The full absolute URL
+        // $currentPath is used for relative path matching
         $currentPath = ltrim(request()->path(), '/'); // path without leading slash
 
         foreach ($menu as &$item) {
-            // Normalize keys
+            // --- Normalization: Set default values for missing keys ---
             $item['type'] = $item['type'] ?? 'route';
             $item['title'] = $item['title'] ?? 'No Title';
             $item['icon'] = $item['icon'] ?? null;
@@ -42,42 +95,49 @@ if (!function_exists('prepare_menu')) {
             $item['url'] = $item['url'] ?? null;
             $item['external'] = $item['external'] ?? false;
             $item['children'] = $item['children'] ?? [];
+            $item['permission'] = $item['permission'] ?? null;
+            $item['controlled_access'] = $item['controlled_access'] ?? false;
 
-            // Normalize children first
+            // Normalize children first recursively
             if (!empty($item['children'])) {
                 $item['children'] = prepare_menu($item['children']);
             }
 
-            // Smart icon handling
+            // --- Icon Handling ---
             if (!empty($item['icon'])) {
                 $ext = pathinfo($item['icon'], PATHINFO_EXTENSION);
+                $isImage = in_array(strtolower($ext), ['png', 'jpg', 'jpeg', 'svg', 'gif']);
 
-                if (in_array(strtolower($ext), ['png', 'jpg', 'jpeg', 'svg', 'gif'])) {
-                    $item['icon'] = asset($item['icon']); // image file → convert to asset URL
-                } else {
-                    $item['icon'] = $item['icon']; // CSS class or other → leave as-is
+                if ($isImage) {
+                    // If it's a file extension, assume it's an asset path
+                    $item['icon'] = asset($item['icon']);
                 }
+                // Otherwise, assume it's a CSS class and leave it as-is
             }
 
             // Default active state
             $item['active'] = false;
 
-            // 1) Match by route name (supports wildcard patterns)
+            // --- Active State Calculation ---
+
+            // 1) Match by route name (supports exact match AND wildcard patterns like 'user.*')
             if (!empty($item['route']) && $currentRoute) {
                 if (Str::is($item['route'], $currentRoute) || $item['route'] === $currentRoute) {
                     $item['active'] = true;
                 }
             }
 
-            // 2) Match by URL (absolute or path)
+            // 2) Match by URL (Absolute or Relative Path)
             if (!$item['active'] && !empty($item['url'])) {
                 $url = $item['url'];
 
                 if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+                    // Absolute URL match (for external or absolute links)
                     if (rtrim($url, '/') === rtrim($currentUrl, '/')) {
                         $item['active'] = true;
                     }
                 } else {
+                    // Relative Path match (uses Laravel's request()->is() for wildcards)
                     $itemPath = ltrim(parse_url($url, PHP_URL_PATH) ?? $url, '/');
                     if ($itemPath !== '' && request()->is($itemPath)) {
                         $item['active'] = true;
@@ -85,7 +145,7 @@ if (!function_exists('prepare_menu')) {
                 }
             }
 
-            // 3) If any child is active, parent becomes active
+            // 3) Propagate Active State (Parent becomes active if any child is active)
             if (!$item['active'] && !empty($item['children'])) {
                 foreach ($item['children'] as $child) {
                     if (!empty($child['active'])) {
@@ -95,28 +155,12 @@ if (!function_exists('prepare_menu')) {
                 }
             }
 
-            // Convenience flags
+            // --- Convenience Flags for Blade Rendering ---
             $item['hasChild'] = !empty($item['children']);
+            // Flag to prevent the anchor tag from rendering a URL, typically for type 'label'
             $item['skip_url'] = $item['skip_url'] ?? ($item['type'] === 'label');
         }
 
         return $menu;
     }
 }
-
-
-
-/*
-Blade rendering snippet (ensure you apply the active class names that Metronic's CSS/JS expects)
-
--- Example: add "kt-menu-item-here" to parent and add a link-active class to <a>
--- Adjust class names to match the exact version of Metronic you use.
-
-<div class="kt-menu-item {{ \$item['active'] ? 'kt-menu-item-here' : '' }}">
-    <a class="kt-menu-link gap-2.5 py-2 px-2.5 rounded-md {{ \$item['active'] ? 'kt-menu-link-active kt-menu-item-active:bg-secondary' : '' }}" href="{{ \$href }}">
-        @if(\$item['icon']) <span class="kt-menu-icon"> <i class="{{ \$item['icon'] }}"></i> </span> @endif
-        <span class="kt-menu-title">{{ \$item['title'] }}</span>
-    </a>
-</div>
-
-*/
