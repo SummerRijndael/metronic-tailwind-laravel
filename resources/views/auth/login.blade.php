@@ -84,6 +84,7 @@
                             </button>
                         </div>
                         <x-input-error :messages="$errors->get('password')" class="mt-2" />
+
                     </div>
 
                     <label class="kt-label">

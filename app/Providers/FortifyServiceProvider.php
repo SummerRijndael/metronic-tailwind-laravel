@@ -7,6 +7,8 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Actions\CheckUserStatusDuringLogin;
+use Laravel\Fortify\Actions\AttemptToAuthenticate;
 
 // --- Laravel Framework & Core Imports ---
 use App\Models\User;
@@ -67,6 +69,16 @@ class FortifyServiceProvider extends ServiceProvider {
         // Throttling for two-factor challenge attempts (limits by session ID)
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
+        });
+
+        Fortify::authenticateThrough(function () {
+            return [
+                \Laravel\Fortify\Actions\EnsureLoginIsNotThrottled::class,
+                \App\Actions\CheckUserStatusDuringLogin::class,       // 🛡️ custom check early
+                \Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable::class,
+                \Laravel\Fortify\Actions\AttemptToAuthenticate::class,
+                \Laravel\Fortify\Actions\PrepareAuthenticatedSession::class,     // continue normal login
+            ];
         });
 
         // --- 3. VIEW DEFINITIONS (Frontend Customization) ---

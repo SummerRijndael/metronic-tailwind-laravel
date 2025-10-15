@@ -1,4 +1,5 @@
 <?php
+
 use Diglactic\Breadcrumbs\Breadcrumbs;
 use Diglactic\Breadcrumbs\Generator as BreadcrumbTrail;
 use App\Models\User;
@@ -34,7 +35,7 @@ Breadcrumbs::for('profile.show', function (BreadcrumbTrail $trail, ?User $user =
 // Profile settings page
 Breadcrumbs::for('profile_settings.show', function (BreadcrumbTrail $trail) {
     $trail->parent('myaccount');
-    $trail->push('Account Settings', route('profile_settings.show') );
+    $trail->push('Account Settings', route('profile_settings.show'));
 });
 
 // My Account page

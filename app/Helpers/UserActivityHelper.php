@@ -60,6 +60,10 @@ if (!function_exists('logUserActivity')) {
             return;
         }
 
+        if (is_array($meta) || $meta instanceof \Illuminate\Support\Collection) {
+            $meta = json_decode(json_encode($meta), true); // safely convert everything to array
+        }
+
         // 3. Create the trail record
         UserActivityTrail::create([
             // Set user_id to the user's ID or null if it's an anonymous/system action
@@ -72,7 +76,7 @@ if (!function_exists('logUserActivity')) {
             'user_agent'  => request()->header('User-Agent'),
 
             // Meta data is automatically cast to JSON by the model.
-            'meta'        => $meta,
+            'meta' => $meta ? json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) : null,
         ]);
     }
 }

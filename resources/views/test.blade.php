@@ -309,7 +309,7 @@
                                             </th>
                                             <th
                                                 class="w-1/5 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
-                                                Status
+                                                Actor
                                             </th>
                                         </tr>
                                     </thead>
@@ -325,13 +325,12 @@
         </div>
 
         <!-- FORM ACTIONS -->
-        <div class="sticky bottom-0 z-10 -mx-8 mt-6 flex justify-end border-t border-border bg-white px-8 py-4 shadow-md">
+        <div class="sticky bottom-0 z-10 -mx-8 mt-6 flex justify-end px-8 py-4 shadow-md">
             <button type="button" onclick="console.log('Discarding changes...');"
                 class="kt-btn kt-btn-outline kt-btn-sm mr-3 shadow-sm">
                 <i class="fas fa-undo-alt mr-2"></i> Discard Changes
             </button>
-            <button type="submit"
-                class="kt-btn kt-btn-sm bg-emerald-500 font-bold text-white shadow-lg shadow-emerald-500/30 transition duration-150 hover:bg-emerald-600">
+            <button type="submit" class="kt-btn kt-btn-sm kt-btn-primary">
                 <i class="fas fa-save mr-2"></i> Apply & Save
             </button>
         </div>
@@ -625,10 +624,10 @@
                     ${
                       !isCurrent
                         ? `
-                                                                                                                                                                                                        <button type="button" onclick="alert('Revoking session ${session.id}')"
-                                                                                                                                                                                                            class="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition duration-150">
-                                                                                                                                                                                                            <i class="fas fa-sign-out-alt mr-1"></i> Revoke
-                                                                                                                                                                                                        </button>`
+                                                                                                                                                                                                                        <button type="button" onclick="alert('Revoking session ${session.id}')"
+                                                                                                                                                                                                                            class="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition duration-150">
+                                                                                                                                                                                                                            <i class="fas fa-sign-out-alt mr-1"></i> Revoke
+                                                                                                                                                                                                                        </button>`
                         : `<span class="text-xs text-slate-400 italic mt-2 sm:mt-0">Current Session</span>`
                     }
                 `;

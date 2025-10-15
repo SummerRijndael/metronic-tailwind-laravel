@@ -130,8 +130,7 @@
                 <label class="kt-form-label max-w-56">Birthday</label>
                 <div class="grow">
                     <x-date-picker name="bday" placeholder="Select your birthday"
-                        value="{{ old('bday', $user->bday) }}"
-                        class="kt-input @error('bday') border-red-500 @enderror" />
+                        value="{{ old('bday', $user->bday) }}" class="kt-input" />
                 </div>
 
                 {{-- 2. DEDICATED JS ERROR MESSAGE CONTAINER --}}

@@ -29,7 +29,7 @@ return new class extends Migration {
 
             $table->json('activity_ids')->nullable();
 
-            $table->boolean('is_active')->default(true);
+            $table->string('status');
             $table->timestamps();
         });
 

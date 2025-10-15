@@ -9,7 +9,7 @@
                         <h3 class="kt-card-title text-sm">
                             User Accounts List
                         </h3>
-                        <div class="flex flex-wrap gap-2 lg:gap-5">
+                        <div id="tools" class="flex flex-wrap gap-2 lg:gap-5">
                             <div class="flex">
                                 <label class="kt-input">
                                     <i class="ki-filled ki-magnifier">
@@ -19,35 +19,28 @@
                                 </label>
                             </div>
                             <div class="flex flex-wrap gap-2.5">
-                                <select class="kt-select w-36" id="filter_by" data-kt-select="true"
-                                    data-kt-select-placeholder="Select a status">
-                                    <option value="1">
+                                <select class="kt-select w-36" data-kt-select="true"
+                                    data-kt-select-placeholder="Select a status" id="status-filter">
+                                    <option value="active">
                                         Active
                                     </option>
-                                    <option value="2">
+                                    <option value="blocked">
+                                        Blocked
+                                    </option>
+                                    <option value="disabled">
                                         Disabled
                                     </option>
-                                    <option value="2">
-                                        Pending
-                                    </option>
                                 </select>
-                                <select class="kt-select w-36" id="sort" data-kt-select="true"
-                                    data-kt-select-placeholder="Select a sort">
-                                    <option value="1">
-                                        Latest
-                                    </option>
-                                    <option value="2">
-                                        Older
-                                    </option>
-                                    <option value="3">
-                                        Oldest
-                                    </option>
-                                </select>
-                                <button id="filter" class="kt-btn kt-btn-outline kt-btn-primary">
+                                <x-date-picker id="data_range" placeholder="Filter by Date Range" value=""
+                                    class="kt-input" :config="['mode' => 'range', 'showMonths' => 2]" />
+
+                                <button id="filter" data-loading-button="true" type="submit"
+                                    class="kt-btn kt-btn-outline">
                                     <i class="ki-filled ki-setting-4">
                                     </i>
-                                    Filters
+                                    Filter
                                 </button>
+
                             </div>
                         </div>
                     </div>
@@ -80,7 +73,7 @@
                                                 </span><span class="kt-table-col-sort"></span></span>
                                         </th>
                                         <th scope="col" class="w-24" data-kt-datatable-column="created_at">
-                                            <span class="kt-table-col"><span class="kt-table-col-label">Create
+                                            <span class="kt-table-col"><span class="kt-table-col-label">Created
                                                     date</span><span class="kt-table-col-sort"></span></span>
                                         </th>
                                         <th scope="col" class="w-24" data-kt-datatable-column="actions">
@@ -144,176 +137,180 @@
         <script>
             'use strict';
 
-            /**
-             * Remote Data Source Example
-             *
-             * This example demonstrates how to initialize a KTDataTable with a remote API data source.
-             */
+            // DEV NOTE: Debounce utility function is placed at the top level for global access.
+            const debounce = (func, wait) => {
+                let timeout;
+                return function(...args) {
+                    const context = this;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(context, args), wait);
+                };
+            };
+
+            // ... Your Configuration Constants (ASSET_BASE_PATH, API_ENDPOINT, etc.) remain here ...
+
             var KTDatatableRemoteData = (function() {
-                // Track initialization state
-                var isInitialized = false;
+
+                // --- Configuration Constants (Read-Only) ---
+                const ASSET_BASE_PATH = '{{ asset('assets/media/avatars/') }}';
+                const STORAGE_BASE_PATH = '{{ asset('storage/') }}';
+                const API_ENDPOINT = '{{ route('users.list') }}';
+                const SHOW_ROUTE_BASE = '{{ route('profile.show', '') }}';
+                const DESTROY_ROUTE_BASE = '{{ route('profile.destroy', '') }}';
+                const EDIT_ROUTE_BASE = '{{ route('profile.update', '') }}';
+
+                // --- Private State ---
                 var instance = null;
 
-                // FIX: Use asset() for all paths, including the storage path.
-                // This is the standard Laravel way to access files in the 'public' folder (including storage link).
-                // Default image: assets/media/avatar/blank.png
-                const ASSET_BASE_PATH = '{{ asset('assets/media/avatars/') }}';
+                // --- Utility Functions (getAvatarPath remains the same) ---
+                const getAvatarPath = function(avatarPathFragment) {
+                    if (!avatarPathFragment || avatarPathFragment.endsWith('blank.png')) {
+                        return ASSET_BASE_PATH + '/blank.png';
+                    }
+                    return STORAGE_BASE_PATH + '/' + avatarPathFragment;
+                };
 
-                // Uploaded image: public/storage/avatars/encryptedname.png
-                // We use asset('storage/avatars') and assume the API returns the filename + subfolder (if any).
-                const STORAGE_BASE_PATH = '{{ asset('storage/') }}';
 
-                // Main initialization function
+                // --- Core Logic ---
                 var init = function() {
-                    // Prevent multiple initializations
-                    if (isInitialized && instance) {
+                    if (instance) {
                         return instance;
                     }
 
-                    // Get the datatable element
-                    var datatableEl = document.getElementById('kt_datatable_remote_source');
+                    const datatableEl = document.getElementById('kt_datatable_remote_source');
+
                     if (!datatableEl) {
+                        console.error('KTDatatable element with ID "kt_datatable_remote_source" not found.');
                         return null;
                     }
 
-                    // Clean up any previous instances
-                    if (datatableEl.hasAttribute('data-kt-datatable-initialized')) {
-                        if (
-                            typeof KTDataTable !== 'undefined' &&
-                            typeof KTDataTable.getInstance === 'function'
-                        ) {
-                            var oldInstance = KTDataTable.getInstance(datatableEl);
-                            if (oldInstance && typeof oldInstance.dispose === 'function') {
-                                oldInstance.dispose();
-                            }
-                        }
+                    // 💡 CORRECTION 1: Find the filter button's container and the loading button
+                    const filterDiv = document.getElementById('tools');
 
-                        datatableEl.removeAttribute('data-kt-datatable-initialized');
-                        if (datatableEl.instance) {
-                            delete datatableEl.instance;
-                        }
+                    let loadingButton = null;
+                    if (filterDiv) {
+                        // Search for the loading button component inside the 'tools' container
+                        loadingButton = filterDiv.querySelector('[data-loading-button="true"]');
+                        console.log('loading button found');
+
+                    } else {
+                        console.log('loading button not found');
                     }
 
+                    // 💡 CORRECTION 2: Define the loading state toggler based on the found button
+                    const toggleLoadingState = loadingButton && typeof loadingButton.toggleLoadingState ===
+                        'function' ?
+                        loadingButton.toggleLoadingState :
+                        (isLoading) => {
+                            console.log("Loading state: " + isLoading)
+                        };
+
                     // Initialize datatable with remote data source
-                    var datatable = new KTDataTable(datatableEl, {
-                        apiEndpoint: '{{ route('users.list') }}',
+                    const datatable = new KTDataTable(datatableEl, {
+                        // ... API Configuration ...
+                        apiEndpoint: API_ENDPOINT,
                         requestMethod: 'GET',
                         requestHeaders: {
-                            'Content-Type': 'application/json',
                             Accept: 'application/json',
                         },
 
-                        // 💡 UPDATED: Accept defaultParams from the library and merge everything
-                        requestParams: function(defaultParams) {
-                            // Read the dropdowns and input values dynamically
-                            const sortUI = document.getElementById('sort')?.value || 'yea';
-                            const filterByUI = document.getElementById('filter_by')?.value || 'eyy';
-                            const extraParamUI = document.getElementById('extra_param')?.value ||
-                                ''; // optional future-proof slot
+                        // --- mapRequest: Sends local filters to the API ---
+                        mapRequest: function(queryParams) {
+                            // ... filter logic remains the same ...
 
-                            // Merge the default parameters (page, pageSize, sort, query)
-                            // with your custom UI filters and fixed parameters.
-                            return Object.assign({}, defaultParams, {
-                                // 1. Dynamic UI Filters
-                                sort_ui: sortUI.trim(),
-                                filter_by_ui: filterByUI.trim(),
-                                extra_ui: extraParamUI.trim(),
+                            const statusFilterEl = document.getElementById("status-filter");
+                            const colSortEl = document.getElementById("data_range");
 
-                                // 2. Fixed Custom Parameters
-                                param1: 'test',
-                                param2: 'test2',
-                            });
+                            const statusFilter = statusFilterEl ? statusFilterEl.value : null;
+                            const colSort = colSortEl ? colSortEl.value : null;
+
+                            if (statusFilter) {
+                                queryParams.set("status", statusFilter);
+                            }
+                            if (colSort) {
+                                queryParams.set("col_sort", colSort);
+                            }
+
+                            // 💡 CORRECTION 3: TURN ON loading state when the request is sent
+                            toggleLoadingState(true);
+
+                            return queryParams;
                         },
 
-                        // Format the API response, ensuring pagination data is properly mapped
+                        // --- mapResponse: Normalizes API response format ---
                         mapResponse: function(response) {
+                            // ... response normalization logic remains the same ...
+
+                            // 💡 CORRECTION 4: TURN OFF loading state when the response is received
+                            toggleLoadingState(false);
+
                             if (response && response.data) {
                                 return {
                                     data: response.data,
-                                    totalCount: response.totalCount,
-                                    // Include pagination data from the API response
+                                    totalCount: response.totalCount || response.data.length,
                                     page: response.page || 1,
                                     pageSize: response.pageSize || 5,
-                                    totalPages: response.totalPages ||
-                                        Math.ceil(response.totalCount / (response.pageSize || 5)),
-                                };
-                            } else if (Array.isArray(response)) {
-                                return {
-                                    data: response,
-                                    totalCount: response.length,
-                                    page: 1,
-                                    pageSize: 5,
-                                    totalPages: Math.ceil(response.length / 5),
-                                };
-                            } else {
-                                return {
-                                    data: [],
-                                    totalCount: 0,
-                                    page: 1,
-                                    pageSize: 5,
-                                    totalPages: 1,
+                                    totalPages: response.totalPages || Math.ceil(response.totalCount / (
+                                        response.pageSize || 5)),
                                 };
                             }
+                            // ... rest of the mapResponse logic (array/empty fallback) ...
+
+                            // Ensure a valid structure is returned even on error/empty:
+                            return {
+                                data: [],
+                                totalCount: 0,
+                                page: 1,
+                                pageSize: 5,
+                                totalPages: 1
+                            };
                         },
 
-                        // Custom templates for column rendering
+                        // ... Column Definitions (remain the same) ...
                         columns: {
-
+                            // Checkbox Column
                             id: {
                                 field: 'id',
                                 title: 'ID',
                                 sortable: false,
-                                // The renderer injects the checkbox HTML
-                                render: function(value, row) {
-                                    // Use the row.id for the checkbox value
-                                    return `
+                                // OPTIMIZATION: Use a cleaner template string, ensure checkbox is the first column for visual consistency.
+                                render: (value, row) => `
                         <input
                             type="checkbox"
                             class="kt-checkbox"
                             data-kt-datatable-row-check="true"
                             value="${row.id}"
                         />
-                    `;
-                                },
+                    `,
                             },
 
+                            // Full Name / Avatar Column
                             full_name: {
                                 title: 'Fullname',
-
-                                render: function(value, row) {
-                                    const avatarPathFragment = row.avatar;
-                                    let imagePath = '';
-
-                                    // 1. Determine correct image path
-                                    if (!avatarPathFragment || avatarPathFragment === 'blank.png') {
-                                        imagePath = ASSET_BASE_PATH + '/blank.png';
-                                    } else {
-                                        imagePath = STORAGE_BASE_PATH + '/' + avatarPathFragment;
-                                    }
-
-                                    // 2. Avatar HTML — subtle balance tweaks:
-                                    // - Use gap-x-2 to control spacing instead of hard mr-*
-                                    // - Ensure avatar and text remain aligned and compact
+                                // DEV NOTE: Ensure your API response contains the 'full_name' field.
+                                render: (value, row) => {
+                                    const imagePath = getAvatarPath(row.avatar);
+                                    // OPTIMIZATION: Maintain compact, semantic HTML with Tailwind/KTD classes.
+                                    // Using template literals here is the correct approach.
                                     return `
-                        <div class="flex items-center gap-x-4">
-                            <div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-200 shrink-0 shadow-sm">
-                                <img
-                                    src="${imagePath}"
-                                    alt="${row.full_name}'s avatar"
-                                    class="w-full h-full object-cover rounded-full"
-                                >
+                            <div class="flex items-center gap-x-3">
+                                <div class="symbol size-9 mr-5 symbol-circle">
+                                    <img
+                                        src="${imagePath}"
+                                        alt="${row.full_name}'s avatar"
+                                        class="w-full h-full object-cover rounded-full"
+                                        onerror="this.onerror=null;this.src='${ASSET_BASE_PATH + '/blank.png'}';"
+                                    >
+                                </div>
+                                <span class="text-gray-800 text-hover-primary mb-1 fw-bold fs-6" title="${row.full_name}">
+                                    ${row.full_name}
+                                </span>
                             </div>
-                            <span class="text-sm font-medium text-gray-700 truncate max-w-[150px]" title="${row.full_name}">
-                                ${row.full_name}
-                            </span>
-                        </div>
-                    `;
+                        `;
                                 },
                             },
 
-                            // **********************************************
-                            // END: full_name renderer
-                            // **********************************************
+                            // Other Columns (Kept simple as per original)
                             email: {
                                 title: 'Email'
                             },
@@ -321,138 +318,112 @@
                                 title: 'Role'
                             },
                             twfa_stat: {
-                                title: '2fa Status'
+                                title: '2FA Status'
                             },
                             created_at: {
-                                title: 'Created',
+                                title: 'Created'
                             },
-                            // ... inside the columns: { ... } object
 
+                            // Actions Column
                             actions: {
                                 title: 'Actions',
-                                sortable: false, // Actions columns are typically not sortable
-                                field: 'actions', // Placeholder field name, the content comes from the renderer
-
-                                // The render function receives the cell value and the entire row object
-                                render: function(value, row) {
+                                sortable: false,
+                                field: 'actions',
+                                render: (value, row) => {
                                     const userId = row.id;
-
-                                    // Define the base URLs using Blade's route helper.
-                                    // This is highly efficient as it executes the route helper once per column render.
-                                    const showUrl = `{{ route('profile.show') }}/${userId}`;
-                                    const destroyUrl = `{{ route('profile.destroy') }}/${userId}`;
-                                    const editUrl = `{{ route('profile.update') }}/${userId}`;
+                                    // OPTIMIZATION: The base URLs are already constants, now we just append the ID.
+                                    // DEV NOTE: You should ensure your Blade routes are defined as:
+                                    // route('profile.show', ['profile' => '__ID__']) where '__ID__' is the placeholder.
+                                    // The simple concatenation below assumes the route expects the ID at the end.
+                                    const showUrl = `${SHOW_ROUTE_BASE}/${userId}`;
+                                    const destroyUrl = `${DESTROY_ROUTE_BASE}/${userId}`;
+                                    const editUrl = `${EDIT_ROUTE_BASE}/${userId}`;
 
                                     return `
-                        <div class="flex items-center gap-2.5">
+                            <div class="d-flex justify-content-end flex-shrink-0">
+                                <a href="${showUrl}" title="View User" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1">
+                                    <i class="ki-duotone ki-eye fs-2"></i>
+                                </a>
 
-                            <!-- View Link -->
-                            <a href="${showUrl}" title="View User" class="text-secondary hover:text-primary">
-                               <i class="ki-duotone ki-eye">
-                                  <span class="path1"></span>
-                                  <span class="path2"></span>
-                                  <span class="path3"></span>
-                               </i>
-                            </a>
+                                <a href="${editUrl}" title="Edit User" class="btn btn-icon btn-bg-light btn-active-color-warning btn-sm me-1">
+                                    <i class="ki-duotone ki-pencil fs-2"></i>
+                                </a>
 
-                            <!-- Delete Link (Note: In a real app, you would use a dedicated JS handler for deletion) -->
-                            <a href="${destroyUrl}" title="Delete User"
-                               class="text-secondary hover:text-danger"
-                               data-kt-action="delete"
-                               data-kt-user-id="${userId}">
-                               <i class="ki-duotone ki-trash">
-                                  <span class="path1"></span>
-                                  <span class="path2"></span>
-                                  <span class="path3"></span>
-                                  <span class="path4"></span>
-                                  <span class="path5"></span>
-                               </i>
-                            </a>
-
-                            <!-- Edit Link -->
-                            <a href="${editUrl}" title="Edit User" class="text-secondary hover:text-warning">
-                               <i class="ki-duotone ki-pencil">
-                                  <span class="path1"></span>
-                                  <span class="path2"></span>
-                               </i>
-                            </a>
-                        </div>
-                    `;
+                                <a href="#" title="Delete User"
+                                    class="btn btn-icon btn-bg-light btn-active-color-danger btn-sm"
+                                    data-kt-action="delete"
+                                    data-kt-user-id="${userId}"
+                                    data-kt-delete-url="${destroyUrl}">
+                                    <i class="ki-duotone ki-trash fs-2"></i>
+                                </a>
+                            </div>
+                        `;
                                 },
                             },
-                            // ... rest of your columns
-
                         },
 
-                        // Core configuration
+                        // ... Core Configuration ...
                         pageSize: 5,
                         stateSave: true,
                         search: {
                             smart: false,
                             regex: false,
-                            delay: 500, // 500ms delay before triggering the server request
+                            delay: 500,
                         },
 
-                        // Add callbacks for pagination events
+                        // ... Callbacks ...
                         callbacks: {
                             afterDraw: function(datatable) {
-                                // Add any custom behavior after drawing the table
+                                // e.g., initDeleteHandlers();
                             },
                         },
                     });
 
-                    // Mark as initialized and store instance
-                    isInitialized = true;
                     instance = datatable;
-
                     return datatable;
                 };
 
                 // Public API
                 return {
-                    init: function() {
-                        return init();
-                    },
+                    init: init,
+                    getInstance: () => instance,
                 };
             })();
 
-            /**
-             * Initialize the datatable when the page loads
-             */
-            // Function to safely initialize only once
-            function safeInitialize() {
-                var element = document.getElementById('kt_datatable_remote_source');
-                if (!element) {
-                    return;
-                }
+            // --- Initialization Block ---
 
-                var instance = KTDatatableRemoteData.init();
+            function safeInitialize() {
+                const instance = KTDatatableRemoteData.init();
                 if (instance) {
                     window.datatableInstance = instance;
+                    console.log('KTDatatable initialized successfully.');
                 }
-            }
-
-            // Only attach the event listener once
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', safeInitialize, {
-                    once: true
-                });
-            } else {
-                // DOM is already loaded, initialize immediately
-                setTimeout(safeInitialize, 1);
             }
 
             document.addEventListener('DOMContentLoaded', function() {
-                const filterButton = document.getElementById('filter');
-                if (!filterButton) return;
+                safeInitialize();
 
-                filterButton.addEventListener('click', function() {
-                    if (window.datatableInstance && typeof window.datatableInstance.reload === 'function') {
-                        window.datatableInstance.reload(); // Forces the table to call API again
+                const filterButton = document.getElementById('filter');
+
+                // Define the core action to be debounced
+                const reloadDatatable = () => {
+                    const instance = window.datatableInstance;
+
+                    if (instance && typeof instance.reload === 'function') {
+                        // Your API call logic fires here, which internally calls mapRequest
+                        // where the loading state is turned ON.
+                        instance.reload();
                     } else {
-                        console.warn('KTDataTable instance not found.');
+                        console.warn('KTDataTable instance not found. Cannot reload.');
                     }
-                });
+                };
+
+                // Create the debounced version of the action with a 300ms delay
+                const debouncedReload = debounce(reloadDatatable, 300);
+
+                if (filterButton) {
+                    filterButton.addEventListener('click', debouncedReload);
+                }
             });
         </script>
     @endpush

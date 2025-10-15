@@ -1,18 +1,35 @@
 @component('mail::message')
-    Verify Your Email Address
-    Hello {{ $user->name }},
+    # Account Activation Required 🔑
 
-    Thank you for registering with our service! Before you can start using your account, we need you to verify your email
-    address.
+    Hello **{{ $user->name }}**,
 
-    Please click the button below to complete your registration. This ensures your account is secure and ready to go.
+    Thank you for joining the {{ config('app.name') }} community! We're excited to have you on board.
+
+    Before you can access your dashboard and start using all our features, we need you to confirm that this is your email
+    address. This is a crucial step to **secure your account**.
+
+    Please click the button below to complete the verification process immediately.
 
     @component('mail::button', ['url' => $verificationUrl])
-        Verify Email Address
+        Verify My Account
     @endcomponent
 
-    If you did not create an account, no further action is required.
+    ***
+
+    **What if the button doesn't work?**
+
+    If you're having trouble clicking the "Verify My Account" button, you can copy and paste the URL below into your web
+    browser:
+    [{{ $verificationUrl }}]({{ $verificationUrl }})
+
+    ***
+
+    **Didn't sign up?**
+
+    If you did not register for an account, please disregard this email. No further action is required and your email
+    address will be removed from our sign-up attempts.
 
     Thanks,
-    {{ config('app.name') }}
+
+    The Team at {{ config('app.name') }}
 @endcomponent

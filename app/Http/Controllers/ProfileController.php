@@ -138,107 +138,123 @@ class ProfileController extends Controller {
      * @param  \App\Http\Requests\ProfileUpdateRequest  $request
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
+
     public function update(ProfileUpdateRequest $request): RedirectResponse|JsonResponse {
         AccessHelper::authorize('user_edit_self');
 
         $user = $request->user();
         $validated = $request->validated();
         $oldAvatarPath = $user->avatar;
+        $newAvatarPath = null;
         $saved = false;
         $errorMessage = 'Failed to update profile.';
-        $newAvatarPath = null; // Initialize to null for cleanup logic
 
+        // 🧱 Start DB transaction
         DB::beginTransaction();
 
         try {
+            $original = $user->getOriginal();
             $user->fill($validated);
 
-            // Reset email verification if changed
+            // Email reset if changed
             if ($user->isDirty('email')) {
                 $user->email_verified_at = null;
             }
 
-            // Handle avatar upload
+            // Avatar handling
             if ($request->hasFile('avatar')) {
                 $avatarFile = $request->file('avatar');
-
-                // Generate a more robust path using user ID as a folder
                 $pathPrefix = "avatars/{$user->public_id}";
-                $filename = hash('sha256', $avatarFile->getClientOriginalName() . time()) . '.' . $avatarFile->getClientOriginalExtension();
-                $newAvatarPath = $avatarFile->storeAs($pathPrefix, $filename, 'public');
+                $filename = hash('sha256', $avatarFile->getClientOriginalName() . time()) . '.' .
+                    $avatarFile->getClientOriginalExtension();
 
+                $newAvatarPath = $avatarFile->storeAs($pathPrefix, $filename, 'public');
                 $user->avatar = $newAvatarPath;
             }
 
-            // Only attempt to save if changes were made, including potential new avatar path
-            if ($user->isDirty()) {
-                $saved = $user->save();
-            } else {
-                // If the user didn't change data but submitted, we treat it as successful
-                $saved = true;
+            $saved = $user->isDirty() ? $user->save() : true;
+
+            if (! $saved) {
+                throw new \Exception('Database save failed.');
             }
 
-            if ($saved) {
-                // Commit DB transaction first
-                DB::commit();
+            DB::commit();
 
-                // Delete old avatar AFTER successful save and commit
-                if (
-                    isset($newAvatarPath) &&
-                    $oldAvatarPath &&
-                    $oldAvatarPath !== 'blank.png' &&
-                    Storage::disk('public')->exists($oldAvatarPath)
-                ) {
-                    Storage::disk('public')->delete($oldAvatarPath);
-                }
-            } else {
-                throw new \Exception('Database save failed.');
+            // 🧹 Post-commit cleanup (safe, outside transaction)
+            if (
+                $newAvatarPath &&
+                $oldAvatarPath &&
+                $oldAvatarPath !== 'blank.png' &&
+                \Storage::disk('public')->exists($oldAvatarPath)
+            ) {
+                \Storage::disk('public')->delete($oldAvatarPath);
             }
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            // If a file was uploaded but DB failed, delete the new file to prevent orphaned storage
-            if (isset($newAvatarPath) && Storage::disk('public')->exists($newAvatarPath)) {
-                Storage::disk('public')->delete($newAvatarPath);
+            if (isset($newAvatarPath) && \Storage::disk('public')->exists($newAvatarPath)) {
+                \Storage::disk('public')->delete($newAvatarPath);
             }
 
-            // Log the error for debugging
             \Log::error("Profile update failed for user {$user->id}: " . $e->getMessage());
-
-            // Ensure $saved is false on error
             $saved = false;
-            // $errorMessage can be customized based on $e->getMessage() if needed
         }
 
-        // --- START NEW LOGIC FOR MESSAGE AND TOAST TYPE ---
-        $statusMessage = $user->wasChanged()
-            ? 'Profile updated successfully!'
-            : 'No changes detected.';
-
-        $finalMessage = $saved ? $statusMessage : $errorMessage;
-
-        // Default toast type: 'error' if save failed, 'success' if saved and changed, 'info' if saved but no changes.
-        $toastType = 'error';
+        /**
+         * --------------------------------
+         * 🧾 Activity Trail (Outside Tx)
+         * --------------------------------
+         * DEV NOTE: Logging after commit ensures the logger runs
+         * on a clean, non-transactional connection. This prevents
+         * it from being rolled back or skipped silently.
+         */
         if ($saved) {
-            $toastType = $user->wasChanged() ? 'success' : 'info';
-        }
-        // --- END NEW LOGIC ---
+            try {
+                // Capture which fields were changed BEFORE save clears them
+                $dirty = $user->getChanges(); // after save(), this shows saved changes
 
-        // Prepare JSON Response
+                unset($dirty['updated_at']); // ignore system timestamps
+
+                $meta = [
+                    'changed_fields' => array_keys($dirty),
+                    'old_values'     => collect($dirty)->map(fn($v, $k) => $original[$k] ?? null)->toArray(),
+                    'new_values'     => collect($dirty)->toArray(),
+                    'ip'             => $request->ip(),
+                    'user_agent'     => $request->userAgent(),
+                ];
+
+                logUserActivity('profile_updated', 'User updated profile information.', $meta, $user);
+            } catch (\Throwable $logError) {
+                $userId = $user instanceof \App\Models\User
+                    ? $user->id
+                    : (is_array($user) ? json_encode($user) : (string) $user);
+
+                \Log::warning("Activity logging failed for user ID {$userId}", [
+                    'error' => $logError->getMessage(),
+                    'meta'  => $meta ?? [], // ✅ prevents undefined variable
+                ]);
+            }
+        }
+
+        // 🎯 Prepare response
+        $statusMessage = $user->wasChanged() ? 'Profile updated successfully!' : 'No changes detected.';
+        $finalMessage  = $saved ? $statusMessage : $errorMessage;
+        $toastType     = $saved ? ($user->wasChanged() ? 'success' : 'info') : 'error';
+
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
-                'message'    => $finalMessage, // Now uses the determined message
+                'message'    => $finalMessage,
                 'status'     => $saved ? 'profile-updated' : 'update-failed',
                 'avatar_url' => $user->getAvatarUrlAttribute(),
-                'type'       => $toastType, // <-- NEW: Include the explicit type
+                'type'       => $toastType,
             ], $saved ? 200 : 500);
         }
 
-        // Prepare Redirect Response
         return redirect()
             ->route('profile_settings.show')
             ->with('status', $saved ? 'profile-updated' : 'update-failed');
     }
+
 
     /**
      * Delete the user’s account.
@@ -278,14 +294,20 @@ class ProfileController extends Controller {
         AccessHelper::authorize('user_view_any');
 
         // 2. Sanitize & Validate Inputs
-        $search     = trim(strip_tags($request->input('search', '')));
-        $sortField  = trim(strip_tags($request->input('sortField', 'created_at')));
-        $sortOrder  = strtolower(trim(strip_tags($request->input('sortOrder', 'desc'))));
-        $pageSize   = (int) $request->input('size', 10);
-        $page       = (int) $request->input('page', 1);
+        $search      = trim(strip_tags($request->input('search', '')));
+        $sortField   = trim(strip_tags($request->input('sortField', 'created_at')));
+        $sortOrder   = strtolower(trim(strip_tags($request->input('sortOrder', 'desc'))));
+        $pageSize    = (int) $request->input('size', 10);
+        $page        = (int) $request->input('page', 1);
+
+        // ** NEW PAYLOAD PARSING **
+        $statusFilter = trim(strip_tags($request->input('status', ''))); // 'active'
+        $colSortParam = trim(strip_tags($request->input('col_sort', ''))); // '2025-10-17 to 2025-11-18'
 
         // 3. Normalize values & fallbacks
-        $validSortFields = ['id', 'name', 'lastname', 'email', 'created_at'];
+        // --- UPDATED SORT FIELDS ---
+        // The valid fields must be actual database columns OR fields you handle with special sorting logic (like 'full_name')
+        $validSortFields = ['id', 'name', 'lastname', 'email', 'created_at', 'full_name', 'status'];
         $validSortOrders = ['asc', 'desc'];
 
         if (!in_array($sortField, $validSortFields)) {
@@ -304,9 +326,26 @@ class ProfileController extends Controller {
             $page = 1;
         }
 
+        // Parse the date range: 'col_sort=2025-10-17+to+2025-11-18'
+        $dateRange = [];
+        if (!empty($colSortParam)) {
+            $parts = array_map('trim', explode(' to ', $colSortParam));
+            if (count($parts) === 2) {
+                // Use Carbon for safer date parsing if available, otherwise native date functions are fine.
+                $startDate = date('Y-m-d', strtotime($parts[0]));
+                $endDate = date('Y-m-d', strtotime($parts[1]));
+                if ($startDate && $endDate) {
+                    $dateRange = [
+                        'start' => $startDate . ' 00:00:00',
+                        'end' => $endDate . ' 23:59:59'
+                    ];
+                }
+            }
+        }
+
         // 4. Initial Query Setup (optimized)
         $query = User::with(['roles:id,name'])
-            ->select('id', 'public_id', 'avatar', 'name', 'lastname', 'email', 'created_at', 'two_factor_secret');
+            ->select('id', 'public_id', 'avatar', 'name', 'lastname', 'email', 'created_at', 'two_factor_secret', 'status'); // Ensure 'status' is selected
 
         // 5. Apply Search Filter (if provided)
         if (!empty($search)) {
@@ -317,14 +356,50 @@ class ProfileController extends Controller {
             });
         }
 
+        // ** APPLY NEW FILTERS **
+
+        // Apply Status Filter ('status=active')
+        if (!empty($statusFilter)) {
+            // Assuming 'status' is a column on the User model
+            $query->where('status', $statusFilter);
+        }
+
+        // Apply Date Range Filter ('col_sort=2025-10-17+to+2025-11-18')
+        if (!empty($dateRange)) {
+            // Assuming the date range filters the user's 'created_at' date
+            $query->whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
+        }
+
+
         // 6. Apply Sorting
-        $query->orderBy($sortField, $sortOrder);
+        // --- CUSTOM SORTING LOGIC ---
+        if ($sortField === 'full_name') {
+            // 1. Sort primarily by 'name' (FirstName)
+            $query->orderBy('name', $sortOrder);
+
+            // 2. Use a secondary sort for 'lastname' to break ties on 'name'.
+            //    We use orderByRaw to ensure NULL values are treated predictably
+            //    (e.g., placing users with no last name at the end of the group).
+
+            if (strtolower($sortOrder) === 'asc') {
+                // ASC: Sort non-null last names A-Z, then put NULLs (no last name) at the end.
+                $query->orderByRaw('COALESCE(lastname), lastname ASC');
+            } else {
+                // DESC: Sort non-null last names Z-A, then put NULLs (no last name) at the end.
+                $query->orderByRaw('COALESCE(lastname) ASC, lastname DESC');
+                // Note: 'ISNULL(lastname) ASC' ensures nulls are always last in DESC sort.
+            }
+        } else {
+            // Apply standard sorting for other database columns
+            $query->orderBy($sortField, $sortOrder);
+        }
 
         // 7. Paginate and Execute Query
         $usersPaginator = $query->paginate($pageSize, ['*'], 'page', $page);
 
         // 8. Format Data Safely
         $formattedUsers = $usersPaginator->getCollection()->map(function ($user) {
+            $status = $user->status ?? 'unknown';
             return [
                 'id'            => $user->public_id ?? '—',
                 'avatar'        => $user->avatar ?? '/images/default-avatar.png',
@@ -332,19 +407,19 @@ class ProfileController extends Controller {
                 'email'         => $user->email ?? '—',
                 'role_name'     => $user->roles->pluck('name')->first() ?? '—',
                 'created_at'    => optional($user->created_at)->format('Y-m-d H:i:s') ?? '—',
-                'twfa_stat' => !empty($user->two_factor_secret) ? 'Active' : 'Disabled',
-                'status'        => 'active', // Placeholder for real status logic
-                'statusLabel'   => 'Active',
+                'twfa_stat'     => !empty($user->two_factor_secret) ? 'Active' : 'Disabled',
+                'status'        => $status,
+                'statusLabel'   => ucfirst($status),
             ];
         });
 
         // 9. Structure Response for KTDataTable
         $response = [
-            'data'        => $formattedUsers,
-            'page'        => $usersPaginator->currentPage(),
-            'pageSize'    => $usersPaginator->perPage(),
-            'totalPages'  => $usersPaginator->lastPage(),
-            'totalCount'  => $usersPaginator->total(),
+            'data'          => $formattedUsers,
+            'page'          => $usersPaginator->currentPage(),
+            'pageSize'      => $usersPaginator->perPage(),
+            'totalPages'    => $usersPaginator->lastPage(),
+            'totalCount'    => $usersPaginator->total(),
         ];
 
         return response()->json($response);

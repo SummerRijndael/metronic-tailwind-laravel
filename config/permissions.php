@@ -84,4 +84,55 @@ return [
         'billing_view'           => ['label' => 'View Billing', 'category' => 'Finance'],
     ],
 
+    /**
+     * =========================================================================
+     * USER STATUSES (Availability Layer)
+     * -------------------------------------------------------------------------
+     * These statuses determine the highest level of access: Can the user
+     * log in and interact with the system at all? This check should execute
+     * BEFORE any detailed permission checks (like AccessHelper::can()).
+     *
+     * @var array
+     * =========================================================================
+     */
+    $statuses = [
+        /**
+         * ACTIVE (🟢 Default)
+         * Use Case: Normal operational state. The user has full intended access
+         * based on their assigned roles and permissions.
+         * Result on Access: Full access (proceeds to Permission/RBAC checks).
+         * Duration: Indefinite.
+         */
+        'active',
+
+        /**
+         * BLOCKED (🔴 Security Lockout)
+         * Use Case: Immediate security-focused denial. Used when the user is
+         * suspected of malicious activity (e.g., bot, brute force) or a high-level
+         * security policy violation.
+         * Result on Access: Immediate Lockout. Cannot log in.
+         * Duration: Indefinite (Requires manual administrator review/reversal).
+         */
+        'blocked',
+
+        /**
+         * SUSPENDED (🟡 Disciplinary/Temporary)
+         * Use Case: Time-limited disciplinary action for temporary policy
+         * violations (e.g., spamming, inappropriate conduct). This status
+         * usually requires an associated 'suspended_until' timestamp.
+         * Result on Access: Temporary Lockout. Cannot log in until expiration.
+         * Duration: Temporary (e.g., 24 hours, 7 days).
+         */
+        'suspended',
+
+        /**
+         * DISABLED (⚫ Administrative/Archive)
+         * Use Case: Permanent administrative removal or soft-delete. Used when
+         * a user requests account deletion, an employee leaves, or the account
+         * is intentionally archived long-term.
+         * Result on Access: Permanent Lockout. Cannot log in.
+         * Duration: Permanent (Used for soft-deleting the user data).
+         */
+        'disabled',
+    ]
 ];

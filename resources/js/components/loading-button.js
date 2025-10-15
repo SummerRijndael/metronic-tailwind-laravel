@@ -1,11 +1,9 @@
 /**
  * Reusable Loading Button Component Logic
- * Attaches loading state management, animation CSS, and rate limiting to buttons
- * with the attribute: data-loading-button="true".
  */
 
 // ====================================================================\
-// B. JS LOGIC
+// B. JS LOGIC (Optimized)
 // ====================================================================\
 
 const LOADING_HTML = `
@@ -16,13 +14,14 @@ const LOADING_HTML = `
         <span class="kt-loader-dot"></span>
     </div>
 `;
+const SELECTOR = '[data-loading-button="true"]:not([data-loading-initialized])';
 
 /**
  * Initializes and toggles the loading state for a single button element.
  * @param {HTMLElement} button - The button element to manage.
  */
 function setupLoadingButton(button) {
-    // Prevent double-setup
+    // Check again in case another observer or event beat this one.
     if (button.hasAttribute("data-loading-initialized")) {
         return;
     }
@@ -44,24 +43,29 @@ function setupLoadingButton(button) {
     setupButtonText();
 
     /**
-     * Toggles the loading state (applies the guaranteed size-lock and DOM swap).
-     * This function is attached directly to the button element.
+     * Toggles the loading state (attached directly to the button element).
      * @param {boolean} isLoading
      */
     button.toggleLoadingState = (isLoading) => {
-        // Only run if the button has the custom attribute set
         if (!button.hasAttribute("data-loading-button")) {
             return;
         }
 
+        // ... (rest of your toggleLoadingState logic remains the same) ...
         if (isLoading) {
-            // 1. Lock dimensions (necessary to prevent reflow when content changes)
+            // 1. Lock dimensions
             button.style.width = `${button.offsetWidth}px`;
             button.style.height = `${button.offsetHeight}px`;
 
-            // 2. Add loading class (for styling like opacity/position:relative)
+            // 2. Add loading class
             button.classList.add("kt-btn-loading");
             button.removeAttribute("data-kt-indicator");
+
+            // 💡 NEW DEBUGGING LOG
+            console.log(
+                "Attempting to remove element:",
+                originalButtonTextElement,
+            );
 
             // 3. REMOVE original text from DOM
             if (
@@ -69,11 +73,17 @@ function setupLoadingButton(button) {
                 originalButtonTextElement.parentNode === button
             ) {
                 originalButtonTextElement.remove();
+                console.log("Original element removed successfully.");
+            } else {
+                console.warn(
+                    "Could not remove original element. Parent mismatch or element is null.",
+                );
             }
 
             // 4. Append the custom loading indicator
             if (!button.querySelector(".kt-loader-content")) {
                 button.insertAdjacentHTML("beforeend", LOADING_HTML);
+                console.log("Loading HTML inserted.");
             }
         } else {
             // 1. Remove loading class
@@ -100,13 +110,46 @@ function setupLoadingButton(button) {
     };
 }
 
-// Auto-initialize all buttons marked for loading when the DOM is ready
+/**
+ * Scan the DOM for uninitialized loading buttons and set them up.
+ */
+const initLoadingButtons = (root = document) => {
+    root.querySelectorAll(SELECTOR).forEach(setupLoadingButton);
+};
+
+// --- Initialization Logic (Handles both static and dynamic elements) ---
+
+// 1. Initialize all buttons present when the DOM is ready (or immediately if it already is)
+// Corrected Line: Pass a function that explicitly calls initLoadingButtons(document)
 document.addEventListener("DOMContentLoaded", function () {
-    document
-        .querySelectorAll('[data-loading-button="true"]')
-        .forEach(setupLoadingButton);
+    initLoadingButtons(document);
 });
 
-// CRITICAL: Expose the setup function globally so form-submission.js can
-// explicitly ensure the button is set up before throttling.
+// 2. Use MutationObserver to initialize buttons added dynamically later (e.g., in a datatable redraw)
+const observer = new MutationObserver(function (mutations) {
+    mutations.forEach(function (mutation) {
+        if (mutation.type === "childList") {
+            // Check for new nodes that match the selector
+            mutation.addedNodes.forEach(function (node) {
+                if (node.nodeType === 1) {
+                    // Check if it's an element
+                    if (node.matches(SELECTOR)) {
+                        setupLoadingButton(node);
+                    }
+                    // Also check for matching descendants
+                    if (node.querySelector) {
+                        node.querySelectorAll(SELECTOR).forEach(
+                            setupLoadingButton,
+                        );
+                    }
+                }
+            });
+        }
+    });
+});
+
+// Start observing the document body for changes in the DOM tree
+observer.observe(document.body, { childList: true, subtree: true });
+
+// CRITICAL: Expose the setup function globally for external scripts to use as fallback/alternative
 window.setupLoadingButton = setupLoadingButton;

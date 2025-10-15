@@ -7,6 +7,18 @@ use App\Http\Controllers\ProfileController;
 // NOTE: These are custom controllers that override or supplement Fortify's default behavior.
 use App\Http\Controllers\Auth\UpdatePasswordController;
 use App\Http\Controllers\Auth\CustomResetPasswordController; // Custom controller for immediate token validation
+use App\Http\Controllers\TwoFactorEmailController;
+
+Route::middleware(['web', 'email.otp',])->group(function () {
+    // Route to show the challenge view (your test blade)
+    Route::get('/two-factor/email', [TwoFactorEmailController::class, 'show'])->name('two-factor.email.show');
+
+    // Route to send the email code
+    Route::post('/two-factor/email/request', [TwoFactorEmailController::class, 'requestOtp'])->name('two-factor.email.request');
+
+    // Route to verify the submitted code
+    Route::post('/two-factor/email/verify', [TwoFactorEmailController::class, 'verifyOtp'])->name('two-factor.email.verify');
+});
 
 // -----------------------------------------------------------------------------
 // I. ROOT & AUTHENTICATION FLOWS (Guests & Unauthenticated Users)
@@ -36,7 +48,7 @@ Route::post('/reset-password', [CustomResetPasswordController::class, 'reset'])
 // II. AUTHENTICATED ROUTES (Middleware: 'auth', 'verified')
 // -----------------------------------------------------------------------------
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'status.verify', 'verified'])->group(function () {
 
     // A. CORE APPLICATION ROUTES
 
@@ -71,7 +83,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Test Routes (For development/debugging)
     Route::get('/test', function () {
-        return view('test');
+        return view('test3');
     })->name('test');
 
     Route::get('/userslist', function () {
