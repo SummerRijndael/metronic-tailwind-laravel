@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Helpers\AccessHelper; // DEV NOTE: Assuming AccessHelper is used for external checks
+use App\Helpers\ActiveUserHelper; // DEV NOTE: Use the newly created helper
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -12,7 +12,10 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Carbon\Carbon; // For type hinting and clarity on dates
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB; // OPTIMIZATION: Required for database session invalidation
+use Illuminate\Support\Facades\Cache; // OPTIMIZATION: Required for consistency
+use Illuminate\Support\Facades\Redis; // OPTIMIZATION: Required for redis session invalidation
 
 class User extends Authenticatable implements MustVerifyEmail {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -21,16 +24,16 @@ class User extends Authenticatable implements MustVerifyEmail {
         hasPermissionTo as protected traitHasPermissionTo;
     }
 
-    // DEV NOTE: Explicitly set $table if it differs from 'users'.
-    // public $table = 'users';
-
     public $timestamps = true;
 
-    // --- Caching Properties for Performance ---
+    // -------------------------------------------------------------------------
+    // Caching Properties for Performance
+    // -------------------------------------------------------------------------
 
     /**
      * Cache for results of hasPermissionTo checks within the current request.
      * key: 'permission_name' => bool (true if granted by role/temp)
+     * DEV NOTE: Used to prevent multiple, identical, costly DB/Spatie checks within a single request.
      * @var array<string, bool>
      */
     protected array $permissionCheckCache = [];
@@ -38,17 +41,23 @@ class User extends Authenticatable implements MustVerifyEmail {
     /**
      * Cache for results of isForbidden checks within the current request.
      * key: 'permission_name:scope' => bool (true if forbidden)
+     * DEV NOTE: Used to prevent repeated database queries for forbid status.
      * @var array<string, bool>
      */
     protected array $forbidCheckCache = [];
 
-    // --- Permission Overrides and Helpers ---
+    // -------------------------------------------------------------------------
+    // Permission Overrides and Helpers
+    // -------------------------------------------------------------------------
 
     /**
      * Override hasPermissionTo to include temporary permissions.
      *
      * OPTIMIZATION: Consolidates Spatie check and Temporary check.
      * The result is cached for the entire request lifecycle.
+     * @param string $permission
+     * @param string|null $guardName
+     * @return bool
      */
     public function hasPermissionTo($permission, $guardName = null): bool {
         // 1. Check cache first. This prevents redundant DB queries for temp permissions.
@@ -63,10 +72,9 @@ class User extends Authenticatable implements MustVerifyEmail {
         }
 
         // 3. Query temporary permissions (only if Spatie check failed)
+        // OPTIMIZATION: The `where('expires_at', '>', now())` is critical.
         $hasTemp = $this->temporaryPermissions()
             ->where('permission_name', $permission)
-            // Use Carbon::now() instead of now() if Carbon import is missing,
-            // but now() is fine if globally available (Laravel default).
             ->where('expires_at', '>', now())
             ->exists();
 
@@ -75,10 +83,26 @@ class User extends Authenticatable implements MustVerifyEmail {
     }
 
     /**
+     * Accessor to check the user's online status based on the ActiveUserHelper.
+     *
+     * OPTIMIZATION: Uses the Attribute cast for cleaner syntax than a traditional accessor method.
+     * @return \Illuminate\Database\Eloquent\Casts\Attribute
+     */
+    protected function isOnline(): Attribute {
+        return Attribute::make(
+            // DEV NOTE: Uses the ActiveUserHelper::isUserActive() which utilizes Cache::has().
+            get: fn() => ActiveUserHelper::isUserActive($this->id),
+        );
+    }
+
+    /**
      * Convenience helper to check for a forbidden permission.
      *
      * OPTIMIZATION: Uses explicit caching to prevent repeated database lookups.
-     * SECURITY: Forbidden check should ideally be run BEFORE hasPermissionTo.
+     * SECURITY: Forbidden checks should ideally be run BEFORE hasPermissionTo checks.
+     * @param string $permission
+     * @param string|null $scope
+     * @return bool
      */
     public function isForbidden(string $permission, ?string $scope = null): bool {
         // Use a consistent cache key format
@@ -91,14 +115,10 @@ class User extends Authenticatable implements MustVerifyEmail {
 
         $query = $this->forbids()->where('permission_name', $permission);
 
-        // Use an explicit where condition for scope, allowing NULL to be queried
-        if ($scope !== null) {
-            $query->where('scope', $scope);
-        } else {
-            // DEV NOTE: Assuming 'scope' in the UserForbid table is nullable.
-            // Adjust this if 'scope' defaults to a string like 'global' in the DB.
-            $query->whereNull('scope');
-        }
+        // OPTIMIZATION: Use conditional query construction
+        $scope === null
+            ? $query->whereNull('scope')
+            : $query->where('scope', $scope);
 
         $isForbidden = $query->exists();
 
@@ -110,7 +130,8 @@ class User extends Authenticatable implements MustVerifyEmail {
 
     /**
      * Relationship to temporary permissions (e.g., UserTemporaryPermission).
-     * @return HasMany<UserTemporaryPermission>
+     * DEV NOTE: Requires UserTemporaryPermission model to exist.
+     * @return HasMany
      */
     public function temporaryPermissions(): HasMany {
         return $this->hasMany(UserTemporaryPermission::class);
@@ -118,7 +139,8 @@ class User extends Authenticatable implements MustVerifyEmail {
 
     /**
      * Relationship to forbidden permissions (e.g., UserForbid).
-     * @return HasMany<UserForbid>
+     * DEV NOTE: Requires UserForbid model to exist.
+     * @return HasMany
      */
     public function forbids(): HasMany {
         return $this->hasMany(UserForbid::class);
@@ -140,7 +162,7 @@ class User extends Authenticatable implements MustVerifyEmail {
         // SECURITY/PERFORMANCE: Clear the cache to ensure subsequent isForbidden() calls re-query.
         $this->forbidCheckCache = [];
 
-        // DEV NOTE: The second argument is the array of attributes to apply if the record is created.
+        // DEV NOTE: Uses firstOrCreate for idempotent operation.
         return $this->forbids()->firstOrCreate(
             ['permission_name' => $permission, 'scope' => $scope],
             ['created_by' => $by, 'notes' => $notes]
@@ -160,9 +182,11 @@ class User extends Authenticatable implements MustVerifyEmail {
         $this->forbidCheckCache = [];
 
         $q = $this->forbids()->where('permission_name', $permission);
-        if ($scope !== null) {
-            $q->where('scope', $scope);
-        }
+
+        // OPTIMIZATION: Use conditional query construction for consistency.
+        $scope !== null
+            ? $q->where('scope', $scope)
+            : $q->whereNull('scope');
 
         return $q->delete();
     }
@@ -185,7 +209,10 @@ class User extends Authenticatable implements MustVerifyEmail {
      */
     protected function lastname(): Attribute {
         return Attribute::make(
-            set: fn(string $value) => ucwords(strtolower(trim($value))),
+            // DEV NOTE: Checks if $value is null or an empty string and returns it immediately.
+            set: fn(?string $value) => ($value === null || trim($value) === '')
+                ? $value
+                : ucwords(strtolower(trim($value))),
         );
     }
 
@@ -195,10 +222,10 @@ class User extends Authenticatable implements MustVerifyEmail {
      * @return string
      */
     public function getAvatarUrlAttribute(): string {
-        // DEV NOTE: Check if the path is the default placeholder or empty.
+        // DEV NOTE: Use ternary operator for concise logic flow.
         $path = (empty($this->avatar) || $this->avatar === 'blank.png')
-            ? 'assets/media/avatars/blank.png' // Assumes 'assets' is public
-            : 'storage/' . $this->avatar;       // Assumes files are in storage/app/public/ and served via /storage link
+            ? 'assets/media/avatars/blank.png' // Assumes public assets folder
+            : 'storage/' . $this->avatar;       // Assumes files served via /storage link
 
         return asset($path);
     }
@@ -217,7 +244,7 @@ class User extends Authenticatable implements MustVerifyEmail {
 
         // 2. Suspended users are not active until suspension expires
         // DEV NOTE: Checks if status is 'suspended' AND if the expiration time is still in the future.
-        if ($this->status === 'suspended' && $this->suspended_until && now()->lt($this->suspended_until)) {
+        if ($this->isSuspended()) {
             return false;
         }
 
@@ -230,7 +257,7 @@ class User extends Authenticatable implements MustVerifyEmail {
      * @return bool
      */
     public function isSuspended(): bool {
-        // DEV NOTE: Uses the same explicit check as isActive() for clarity and consistency.
+        // DEV NOTE: Uses a simpler truth check (will be false if $this->suspended_until is null)
         return $this->status === 'suspended' && $this->suspended_until && now()->lt($this->suspended_until);
     }
 
@@ -242,9 +269,11 @@ class User extends Authenticatable implements MustVerifyEmail {
         if (!$this->isSuspended()) return null;
 
         // DEV NOTE: Uses diffForHumans with short parts for a concise output.
+        // OPTIMIZATION: Use $this->suspended_until which is cast to a Carbon instance.
         return $this->suspended_until->diffForHumans(now(), [
             'parts' => 2,
             'short' => true,
+            'syntax' => Carbon::DIFF_ABSOLUTE, // 🚀 CRITICAL FIX
         ]);
     }
 
@@ -255,21 +284,22 @@ class User extends Authenticatable implements MustVerifyEmail {
         'lastname',
         'email',
         'password',
-        'settings', // DEV NOTE: Used for user preferences/non-critical data
+        'settings',
         'sex',
         'bday',
         'mobile',
         'avatar',
         'password_changed_at',
-        'status', // Required for the isActive logic
-        'public_id', // Add public_id to fillable if it's set in mass assignment
+        'status',
+        'public_id',
+        'suspended_until', // OPTIMIZATION: Add to fillable for easy mass assignment of suspensions
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
-        'two_factor_recovery_codes', // SECURITY: These should always be hidden
-        'two_factor_secret',         // SECURITY: These should always be hidden
+        'two_factor_recovery_codes',
+        'two_factor_secret',
     ];
 
     protected $casts = [
@@ -277,7 +307,7 @@ class User extends Authenticatable implements MustVerifyEmail {
         'bday' => 'datetime',
         'password_changed_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
-        'password' => 'hashed', // Laravel's automatic hashing
+        'password' => 'hashed',
         'settings' => 'array',
         'suspended_until' => 'datetime', // CRITICAL for handling temporary suspensions
     ];
@@ -287,11 +317,7 @@ class User extends Authenticatable implements MustVerifyEmail {
      */
     protected static function booted() {
         static::creating(function ($user) {
-            // DEV NOTE: Use is_null for robust check, or check if the key is empty
-            // (if the key is not in fillable, it might not be set by the Request).
-
-            // SECURITY: Use a unique ID (UUID) for public visibility, preventing
-            // sequence enumeration attacks via /user/1, /user/2, etc.
+            // SECURITY: Use a unique ID (UUID) for public visibility.
             if (is_null($user->public_id)) {
                 $user->public_id = (string) Str::uuid();
             }
@@ -302,30 +328,63 @@ class User extends Authenticatable implements MustVerifyEmail {
         });
     }
 
+    /**
+     * OPTIMIZATION: Invalidates all user sessions across supported drivers.
+     *
+     * DEV NOTE: Requires the use of DB and Redis facades.
+     * This method is complex due to file/redis session storage implementation details.
+     * SECURITY: Crucial for immediate logouts upon password change, suspension, etc.
+     * @return void
+     */
     public function invalidateAllSessions(): void {
-        if (config('session.driver') === 'database') {
-            // Database session driver
-            DB::table(config('session.table', 'sessions'))
-                ->where('user_id', $this->id)
-                ->delete();
-        } elseif (config('session.driver') === 'file') {
-            // File-based sessions
-            $path = storage_path('framework/sessions');
-            foreach (glob("$path/*") as $file) {
-                if (strpos(file_get_contents($file), $this->id) !== false) {
-                    @unlink($file);
+        $driver = config('session.driver');
+
+        // OPTIMIZATION: Use a switch statement for cleaner driver handling
+        switch ($driver) {
+            case 'database':
+                // Database session driver (easiest to invalidate)
+                DB::table(config('session.table', 'sessions'))
+                    ->where('user_id', $this->id)
+                    ->delete();
+                break;
+
+            case 'file':
+                // File-based sessions (requires reading files, which is slow/risky)
+                $path = storage_path('framework/sessions');
+                // DEV NOTE: Iterating over files is slow, but necessary for file driver.
+                // Using glob is slightly better than DirectoryIterator for simple cases.
+                foreach (glob("$path/*") as $file) {
+                    if (str_contains(file_get_contents($file), (string) $this->id)) {
+                        @unlink($file);
+                    }
                 }
-            }
-        } elseif (config('session.driver') === 'redis') {
-            // Redis sessions (advanced case)
-            $redis = app('redis')->connection(config('session.connection'));
-            $keys = $redis->keys(config('session.prefix', 'laravel:') . 'sessions:*');
-            foreach ($keys as $key) {
-                $session = $redis->get($key);
-                if ($session && str_contains($session, (string) $this->id)) {
-                    $redis->del($key);
+                break;
+
+            case 'redis':
+                // Redis sessions (requires scanning keys, which can be slow on large datasets)
+                $redis = Redis::connection(config('session.connection'));
+                // OPTIMIZATION: Use SCAN instead of KEYS for large datasets to avoid blocking the server.
+                // However, for simplicity, using KEYS is acceptable in smaller projects.
+                $prefix = config('session.prefix', 'laravel:');
+                $keys = $redis->keys("{$prefix}sessions:*");
+
+                // OPTIMIZATION: Use Redis::pipeline for faster bulk operations
+                $pipeline = $redis->pipeline();
+                foreach ($keys as $key) {
+                    // This is still slow, as it requires getting/checking the payload
+                    $session = $redis->get($key);
+                    if ($session && str_contains($session, (string) $this->id)) {
+                        $pipeline->del($key);
+                    }
                 }
-            }
+                $pipeline->exec();
+                break;
+
+            case 'cache':
+                // If using cache driver (e.g., Memcached, Redis via Cache facade)
+                // This is generally impossible without manually querying keys, so it's often ignored.
+                // If using Redis as cache, the keys logic above is the best approach.
+                break;
         }
     }
 

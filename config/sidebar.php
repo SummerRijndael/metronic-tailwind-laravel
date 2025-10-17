@@ -71,7 +71,7 @@ return [
                 [
                     'type' => 'route',
                     'title' => 'Users List',
-                    'route' => 'userslist',
+                    'route' => 'admin.user_management.dashboard',
                     'permission' => 'user_view_any', // AccessHelper::can('user_view_any') must pass
                 ],
                 [

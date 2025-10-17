@@ -97,7 +97,7 @@ class FortifyServiceProvider extends ServiceProvider {
         // --- 4. REDIRECTS ---
 
         // Define where the user is redirected after successful registration and login
-        Fortify::redirects('register', '/dashboard');
+        Fortify::redirects('register', '/login');
         Fortify::redirects('login', '/dashboard');
 
         // --- 5. CUSTOM AUTHENTICATION LOGIC ---

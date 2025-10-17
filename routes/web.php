@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\UserManagement\DashboardController;
 
 // --- Custom Authentication Controller Imports ---
 // NOTE: These are custom controllers that override or supplement Fortify's default behavior.
@@ -9,7 +10,7 @@ use App\Http\Controllers\Auth\UpdatePasswordController;
 use App\Http\Controllers\Auth\CustomResetPasswordController; // Custom controller for immediate token validation
 use App\Http\Controllers\TwoFactorEmailController;
 
-Route::middleware(['web', 'email.otp',])->group(function () {
+Route::middleware(['web', 'email.otp'])->group(function () {
     // Route to show the challenge view (your test blade)
     Route::get('/two-factor/email', [TwoFactorEmailController::class, 'show'])->name('two-factor.email.show');
 
@@ -71,8 +72,11 @@ Route::middleware(['auth', 'status.verify', 'verified'])->group(function () {
 
     // Profile Settings/Tools Routes (Grouped under ProfileController)
     Route::get('/profile_settings', [ProfileController::class, 'settings'])->name('profile_settings.show');
-    Route::get('/users/load_list', [ProfileController::class, 'list'])->name('users.list');
 
+    Route::prefix('admin/user-management')->name('admin.user_management.')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/userslist', [DashboardController::class, 'list'])->name('dashboard.list');
+    });
 
     // C. TOOL & TEST ROUTES
 
@@ -83,7 +87,7 @@ Route::middleware(['auth', 'status.verify', 'verified'])->group(function () {
 
     // Test Routes (For development/debugging)
     Route::get('/test', function () {
-        return view('test3');
+        return view('welcome');
     })->name('test');
 
     Route::get('/userslist', function () {

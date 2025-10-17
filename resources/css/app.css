@@ -2,410 +2,199 @@
 @tailwind components;
 @tailwind utilities;
 
-@theme {
-    --font-sans:
-        "Instrument Sans", ui-sans-serif, system-ui, sans-serif,
-        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-        "Noto Color Emoji";
-}
-
-/* Metronic Custom Styles */
-@layer base {
-    html {
-        scroll-behavior: smooth;
-    }
-
-    body {
-        text-rendering: optimizeLegibility;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
-}
-
-@layer components {
-    /* Metronic Button Styles */
-    .kt-btn {
-        @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
-    }
-
-    .kt-btn-primary {
-        @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
-    }
-
-    .kt-btn-outline {
-        @apply border border-border bg-transparent text-foreground hover:bg-background hover:text-foreground;
-    }
-
-    .kt-btn-ghost {
-        @apply bg-transparent text-foreground hover:bg-background;
-    }
-
-    .kt-btn-icon {
-        @apply p-2;
-    }
-
-    .kt-btn-sm {
-        @apply px-3 py-1.5 text-xs;
-    }
-
-    /* Card Styles */
-    .kt-card {
-        @apply bg-background border border-border rounded-lg shadow-sm;
-    }
-
-    .kt-card-header {
-        @apply flex items-center justify-between p-5 border-b border-border;
-    }
-
-    .kt-card-title {
-        @apply text-lg font-semibold text-foreground;
-    }
-
-    .kt-card-content {
-        @apply p-5;
-    }
-
-    .kt-card-footer {
-        @apply flex items-center justify-between p-5 border-t border-border;
-    }
-
-    /* Menu Styles */
-    .kt-menu {
-        @apply bg-background border border-border rounded-lg shadow-lg;
-    }
-
-    .kt-menu-item {
-        @apply relative;
-    }
-
-    .kt-menu-link {
-        @apply flex items-center px-4 py-2 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors;
-    }
-
-    .kt-menu-icon {
-        @apply w-5 h-5 mr-3 text-muted-foreground;
-    }
-
-    .kt-menu-title {
-        @apply flex-1;
-    }
-
-    .kt-menu-arrow {
-        @apply ml-auto;
-    }
-
-    /* Container Styles */
-    .kt-container-fixed {
-        @apply container mx-auto px-4 lg:px-8;
-    }
-
-    /* Header Styles */
-    .kt-header {
-        @apply bg-background border-b border-border;
-    }
-
-    /* Wrapper Styles */
-    .kt-wrapper {
-        @apply min-h-0;
-    }
-
-    /* Link Styles */
-    .kt-link {
-        @apply text-blue-600 hover:text-blue-800 font-medium transition-colors;
-    }
-
-    .kt-link-underlined {
-        @apply underline;
-    }
-
-    .kt-link-dashed {
-        @apply border-b border-dashed border-current;
-    }
-
-    /* Toggle Group */
-    .kt-toggle-group {
-        @apply inline-flex rounded-lg border border-border;
-    }
-
-    .kt-toggle-group .kt-btn {
-        @apply rounded-none border-0 first:rounded-l-lg last:rounded-r-lg;
-    }
-
-    /* === LOADING BUTTON COMPONENT STYLES === */
-    .kt-btn-loading {
-        position: relative;
-        pointer-events: none;
-        overflow: hidden;
-        /* CRITICAL: Neutralize ALL padding to prevent clipping when dimensions are locked by JS */
-        padding: 0 !important;
-    }
-
-    /* Ensure the original text is completely hidden (although JS removes it, this is a safeguard) */
-    .kt-btn-loading .kt-btn-text {
-        display: none !important;
-    }
-
-    .kt-loader-content {
-        /* Robust Centering: Always position in the true center of the button */
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        gap: 4px;
-        color: inherit; /* Inherit the button's text color */
-        white-space: nowrap;
-    }
-
-    /* Dot animation styles */
-    .kt-loader-dot {
-        width: 6px;
-        height: 6px;
-        background-color: currentColor;
-        border-radius: 50%;
-        display: inline-block;
-        animation: dot-pulse 1s infinite ease-in-out;
-    }
-
-    .kt-loader-dot:nth-child(1) {
-        animation-delay: 0s;
-    }
-    .kt-loader-dot:nth-child(2) {
-        animation-delay: 0.15s;
-    }
-    .kt-loader-dot:nth-child(3) {
-        animation-delay: 0.3s;
-    }
-
-    @keyframes dot-pulse {
-        0%,
-        80%,
-        100% {
-            transform: scale(0.6);
-            opacity: 0.6;
-        }
-        40% {
-            transform: scale(1);
-            opacity: 1;
-        }
-    }
-}
-
-@layer utilities {
-    /* Custom spacing utilities */
-    .space-x-2\.5 > * + * {
-        margin-left: 0.625rem;
-    }
-
-    .gap-7\.5 {
-        gap: 1.875rem;
-    }
-
-    /* Hide scrollbar but allow scrolling */
-    .scrollbar-hidden {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-
-    .scrollbar-hidden::-webkit-scrollbar {
-        display: none;
-    }
-}
-
-/* =======================================================================
-    [START] IMAGE UPLOADER COMPONENT STYLES (NO GLOBAL OVERRIDES)
-    ======================================================================= */
-
-/* 1. CSS VARIABLES (Sizing and positioning variables) */
+/* -----------------------------------------------------------------------
+   DEV NOTE: THEME & GLOBAL VARIABLES (CRITICAL FOR CUSTOM COLORS)
+   This block defines the custom RGB colors used by your Tailwind config
+   for utilities like 'bg-background' and 'border-border'.
+----------------------------------------------------------------------- */
 :root {
-    --color-circle-border: #f8f8f8;
+    /* --- THEME COLORS (GLOBAL) --- */
+    /* DEV NOTE: Using hex values for single colors like 'border-color' is fine here
+       since they are outside the Tailwind color system, but we must define
+       the Tailwind theme variables for 'border' (from your config).
+       We will use a strong color to fix your previous visibility issue. */
+    --tw-color-background: 255 255 255; /* White (Example default) */
+    --tw-color-foreground: 15 23 42;    /* Slate-900 (Example default) */
+    --tw-color-border: 100 116 139;     /* FIX: More visible border color (Slate-300 RGB) */
+    /* ... define all other custom colors from tailwind.config.js here ... */
+}
+
+/* DEV NOTE: DARK MODE THEME */
+.dark {
+    --tw-color-background: 15 23 42; /* Slate-900 */
+    --tw-color-foreground: 248 250 252; /* Slate-100 */
+    --tw-color-border: 51 65 85; /* Stronger border for dark mode (Slate-700 RGB) */
+}
+
+/* -----------------------------------------------------------------------
+   DEV NOTE: AVATAR SIZING VARIABLES (MUST BE HERE)
+   This block defines the standard CSS variables that control the AVATAR
+   component's dimensions. They must be outside @layer blocks to be accessible
+   by all CSS.
+----------------------------------------------------------------------- */
+:root {
+    /* FIX: Re-inserting avatar color variables (using original hex values) */
+    --color-circle-border: #f8f8f8; /* CRITICAL for avatar look */
     --color-edit-icon: #757575;
 
     /* --- DEFAULT LG SIZE (Used if no class is applied) --- */
     --img-size: 12rem;
     --border-width: 0.375rem;
     --btn-size: 2.56rem;
-
-    /* Calculated offset for seamless curve alignment */
     --btn-offset-x: calc(var(--border-width) * 0.5);
     --btn-offset-y: calc(var(--border-width) * 0.5);
 }
 
-/* 2. AVATAR RESIZE CLASSES (Override variables based on $size prop) */
-.avatar-size-xxl {
-    --img-size: 16rem;
-    --border-width: 0.5rem;
-    --btn-size: 3.4rem;
-}
-.avatar-size-xl {
-    --img-size: 14rem;
-    --border-width: 0.4375rem;
-    --btn-size: 2.9rem;
-}
-.avatar-size-lg {
-    --img-size: 10rem;
-    --border-width: 0.3125rem;
-    --btn-size: 2.1rem;
-}
-.avatar-size-md {
-    --img-size: 8rem;
-    --border-width: 0.25rem;
-    --btn-size: 1.7rem;
-}
-.avatar-size-sm {
-    --img-size: 5rem;
-    --border-width: 0.1875rem;
-    --btn-size: 1.05rem;
-}
-.avatar-size-xsm {
-    --img-size: 4rem;
-    --border-width: 0.125rem;
-    --btn-size: 0.875rem;
+/* 2. AVATAR RESIZE CLASSES (Override the :root variables above) */
+.avatar-size-xxl { --img-size: 16rem; --border-width: 0.5rem; --btn-size: 3.4rem; }
+.avatar-size-xl { --img-size: 14rem; --border-width: 0.4375rem; --btn-size: 2.9rem; }
+.avatar-size-lg { --img-size: 10rem; --border-width: 0.3125rem; --btn-size: 2.1rem; }
+.avatar-size-md { --img-size: 8rem; --border-width: 0.25rem; --btn-size: 1.7rem; }
+.avatar-size-sm { --img-size: 5rem; --border-width: 0.1875rem; --btn-size: 1.05rem; }
+.avatar-size-xsm { --img-size: 4rem; --border-width: 0.125rem; --btn-size: 0.875rem; }
+
+
+/* -----------------------------------------------------------------------
+   [START] BASE STYLES & COMPONENTS
+----------------------------------------------------------------------- */
+
+/* DEV NOTE: @theme is deprecated, keep in tailwind.config.js if possible. */
+/* @theme { ... } */
+
+@layer base {
+    html { scroll-behavior: smooth; }
+    body {
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        /* FIX: Ensure body background/text is set based on theme */
+        @apply bg-background text-foreground;
+    }
 }
 
-/* 3. CORE COMPONENT STYLES (@layer components for better management) */
 @layer components {
+    /* --- METRONIC COMPONENTS (kt-*) --- */
+    /* DEV NOTE: Added 'disabled' states for robustness */
+    .kt-btn {
+        @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200
+               focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+    .kt-btn-primary { @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500; }
+    .kt-btn-outline { @apply border border-border bg-transparent text-foreground hover:bg-background hover:text-foreground; }
+    .kt-btn-ghost { @apply bg-transparent text-foreground hover:bg-background; }
+    .kt-btn-icon { @apply p-2; }
+    .kt-btn-sm { @apply px-3 py-1.5 text-xs; }
+
+    /* --- CARDS, MENU, LAYOUT --- */
+    .kt-card { @apply bg-background border border-border rounded-lg shadow-sm; }
+    .kt-card-header { @apply flex items-center justify-between p-5 border-b border-border; }
+    .kt-card-title { @apply text-lg font-semibold text-foreground; }
+    .kt-card-content { @apply p-5; }
+    .kt-card-footer { @apply flex items-center justify-between p-5 border-t border-border; }
+    .kt-menu { @apply bg-background border border-border rounded-lg shadow-lg; }
+    .kt-menu-item { @apply relative; }
+    .kt-menu-link { @apply flex items-center px-4 py-2 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors; }
+    .kt-menu-icon { @apply w-5 h-5 mr-3 text-muted-foreground; }
+    .kt-menu-title { @apply flex-1; }
+    .kt-menu-arrow { @apply ml-auto; }
+    .kt-container-fixed { @apply container mx-auto px-4 lg:px-8; }
+    .kt-header { @apply bg-background border-b border-border; }
+    .kt-wrapper { @apply min-h-0; }
+    .kt-link { @apply text-blue-600 hover:text-blue-800 font-medium transition-colors; }
+    .kt-link-underlined { @apply underline; }
+    .kt-link-dashed { @apply border-b border-dashed border-current; }
+    .kt-toggle-group { @apply inline-flex rounded-lg border border-border; }
+    .kt-toggle-group .kt-btn { @apply rounded-none border-0 first:rounded-l-lg last:rounded-r-lg; }
+
+    /* === LOADING BUTTON COMPONENT (kt-btn-loading) === */
+    /* DEV NOTE: Used @apply for cleaner styles where possible */
+    .kt-btn-loading {
+        @apply relative pointer-events-none overflow-hidden;
+        padding: 0 !important;
+    }
+    .kt-btn-loading .kt-btn-text { display: none !important; }
+    .kt-loader-content {
+        @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
+               flex items-center justify-center gap-1; /* OPTIMIZATION: Using tailwind gap-1 (4px) */
+        color: inherit;
+        white-space: nowrap;
+    }
+    /* Dot animations are preserved as standard CSS */
+    .kt-loader-dot { ... }
+    /* @keyframes dot-pulse is preserved ... */
+
+    /* -----------------------------------------------------------------------
+       [START] AVATAR/IMAGE UPLOADER COMPONENT STYLES
+       (Moved here from the bottom for Tailwind consistency)
+    ----------------------------------------------------------------------- */
     /* AVATAR WRAPPER */
     .avatar-upload {
         position: relative;
-        /* Wrapper size is now driven by variable */
         width: var(--img-size);
         height: var(--img-size);
     }
 
     /* PREVIEW CONTAINER */
     .avatar-preview-size {
-        width: 100%;
-        height: 100%;
-        border-radius: 9999px;
-        overflow: hidden;
-
-        /* Dimensions from variables */
+        width: 100%; height: 100%; border-radius: 9999px; overflow: hidden;
         border-width: var(--border-width);
         border-color: var(--color-circle-border);
-        background-color: white;
-
-        /* Custom shadow (re-used from your original style) */
-        box-shadow:
-            0px 4px 10px 0px rgba(0, 0, 0, 0.15),
-            0px 1px 3px 0px rgba(0, 0, 0, 0.08);
+        background-color: white; /* CRITICAL: Background color for the default state */
+        box-shadow: 0px 4px 10px 0px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.08);
     }
 
     /* BUTTON PLACEMENT */
-    .avatar-edit {
-        position: absolute;
-        top: 0;
-        right: 0;
-        z-index: 10;
-    }
+    .avatar-edit { position: absolute; top: 0; right: 0; z-index: 10; }
 
     /* EDIT BUTTON STYLE */
     .edit-button-style {
-        /* Size from variable */
-        width: var(--btn-size);
-        height: var(--btn-size);
-
-        /* Translation from variable for seamless curve alignment */
+        width: var(--btn-size); height: var(--btn-size);
         transform: translate(var(--btn-offset-x), var(--btn-offset-y));
-
-        /* Re-applying necessary styles from your original component */
-        @apply bg-white shadow-lg cursor-pointer transition-all duration-200 border-2;
-
-        border-radius: 9999px;
+        @apply bg-white shadow-lg cursor-pointer transition-all duration-200 border-2 rounded-full;
     }
 
     /* Icon inside the button scales with the button size */
-    .edit-button-style svg {
-        width: 40%;
-        height: 40%;
-    }
+    .edit-button-style svg { width: 40%; height: 40%; }
+    .error-message { transition: all 0.3s ease-in-out; } /* No @apply transition utility available */
 
-    /* ERROR MESSAGE TRANSITION (must be in a component or utility layer to use Tailwind classes) */
-    .error-message {
-        transition: all 0.3s ease-in-out;
-    }
+    /* === CSS-DRIVEN STATE LOGIC === */
+    /* Icon Visibility */
+    .avatar-upload:not(.is-uploaded) [data-icon="remove"] { display: none !important; }
+    .avatar-upload.is-uploaded [data-icon="pencil"] { display: none !important; }
+    /* Button Hover & Style Logic */
+    .avatar-upload.is-uploaded [data-action="edit-button"] { @apply border-red-200; }
+    .avatar-upload.is-uploaded [data-action="edit-button"]:hover { @apply bg-red-100; }
+    .avatar-upload:not(.is-uploaded) [data-action="edit-button"] { @apply border-gray-200; }
+    .avatar-upload:not(.is-uploaded) [data-action="edit-button"]:hover { @apply bg-gray-100; }
+    /* Cursor Logic */
+    .avatar-upload:not(.is-uploaded) [data-action="preview-container"] { cursor: pointer; }
+    .avatar-upload.is-uploaded [data-action="preview-container"] { cursor: default; }
+} /* End of @layer components */
 
-    /* =======================================================================
-        4. CSS-DRIVEN STATE LOGIC (CRITICAL FOR JS)
-        ======================================================================= */
+/* -----------------------------------------------------------------------
+   [START] UTILITIES & MISC. CSS
+----------------------------------------------------------------------- */
 
-    /* ICON VISIBILITY LOGIC */
-
-    /* If IS NOT uploaded, hide the REMOVE icon (Default State) */
-    .avatar-upload:not(.is-uploaded) [data-icon="remove"] {
-        display: none !important;
-    }
-
-    /* If IS uploaded, hide the PENCIL icon */
-    .avatar-upload.is-uploaded [data-icon="pencil"] {
-        display: none !important;
-    }
-
-    /* BUTTON HOVER & STYLE LOGIC */
-
-    /* When an image is uploaded (is-uploaded): Change button hover to RED for removal */
-    .avatar-upload.is-uploaded [data-action="edit-button"] {
-        @apply border-red-200;
-    }
-    .avatar-upload.is-uploaded [data-action="edit-button"]:hover {
-        @apply bg-red-100;
-    }
-
-    /* When NO image is uploaded (not .is-uploaded): Default hover state for upload */
-    .avatar-upload:not(.is-uploaded) [data-action="edit-button"] {
-        @apply border-gray-200;
-    }
-    .avatar-upload:not(.is-uploaded) [data-action="edit-button"]:hover {
-        @apply bg-gray-100;
-    }
-
-    /* CURSOR LOGIC */
-    .avatar-upload:not(.is-uploaded) [data-action="preview-container"] {
-        cursor: pointer;
-    }
-    .avatar-upload.is-uploaded [data-action="preview-container"] {
-        cursor: default;
-    }
+@layer utilities {
+    /* Custom spacing utilities are preserved */
+    .space-x-2\.5 > * + * { margin-left: 0.625rem; }
+    .gap-7\.5 { gap: 1.875rem; }
+    /* Scrollbar utilities are preserved */
+    .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+    .scrollbar-hidden::-webkit-scrollbar { display: none; }
 }
 
-.avatar-align-left {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-}
-
-.avatar-align-center {
-    margin-left: auto !important;
-    margin-right: auto !important;
-}
-/* [END] IMAGE UPLOADER COMPONENT STYLES */
-
-/* custom css  for user manager  */
-.container-wrapper {
-    max-width: 100%;
-    padding: 1rem 2rem;
-}
-/* Custom tab marker for the active state (Metronic doesn't define this by default) */
+/* --- CUSTOM CSS FOR USER MANAGER --- */
+.container-wrapper { max-width: 100%; padding: 1rem 2rem; }
+/* Avatar alignment styles are preserved */
+.avatar-align-left { margin-left: 0 !important; margin-right: 0 !important; }
+.avatar-align-center { margin-left: auto !important; margin-right: auto !important; }
+/* Tab marker is preserved */
 .active-tab-marker {
-    border-bottom: 3px solid #10b981; /* Emerald-500: Technical accent color */
+    border-bottom: 3px solid #10b981; /* Preserve original hard-coded values */
     color: #1e293b;
     font-weight: 600;
 }
-/* High-density table style (Ensuring padding is minimal for dense views) */
-.dense-table th,
-.dense-table td {
-    padding-top: 0.6rem;
-    padding-bottom: 0.6rem;
-}
-/* Custom scrollbar utility */
-.custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #94a3b8;
-    border-radius: 3px;
-}
+.dense-table th, .dense-table td { padding-top: 0.6rem; padding-bottom: 0.6rem; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 3px; }

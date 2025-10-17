@@ -103,12 +103,13 @@
 | @once ensures the library is loaded only once (even with multiple components).
 --}}
 
-
-@push('scripts')
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const config = @json($mergedConfig);
-            flatpickr("#{{ $id }}", config);
-        });
-    </script>
-@endpush
+@once
+    @push('scripts')
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const config = @json($mergedConfig);
+                flatpickr("#{{ $id }}", config);
+            });
+        </script>
+    @endpush
+@endonce

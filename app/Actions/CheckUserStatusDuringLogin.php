@@ -43,7 +43,7 @@ class CheckUserStatusDuringLogin {
             );
 
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'email' => __("Your account is suspended for another {$user->remainingSuspension()}."),
+                'email' => __("Your account is suspended for another {$user->remainingSuspension()}"),
             ]);
         }
 

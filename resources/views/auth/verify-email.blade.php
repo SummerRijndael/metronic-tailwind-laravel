@@ -17,8 +17,10 @@
 
                 <!-- Illustration -->
                 <div class="flex justify-center py-10">
-                    <img alt="image" class="max-h-[130px] dark:hidden" src="assets/media/illustrations/30.svg" />
-                    <img alt="image" class="light:hidden max-h-[130px]" src="assets/media/illustrations/30-dark.svg" />
+                    <img alt="image" class="max-h-[130px] dark:hidden"
+                        src="{{ asset('assets/media/illustrations/30.svg') }}" />
+                    <img alt="image" class="light:hidden max-h-[130px]"
+                        src="{{ asset('assets/media/illustrations/30-dark.svg') }}" />
                 </div>
 
                 <!-- Heading -->

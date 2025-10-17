@@ -15,18 +15,18 @@ class DatabaseSeeder extends Seeder {
         //User::factory()->count(10)->create();
 
         // Create 5 RBAC-only users
-        User::factory()->count(1)->rbacOnly()->create();
+        // User::factory()->count(24)->rbacOnly()->create();
 
         // Create 3 direct-permission only users
-        User::factory()->count(1)->directOnly()->create();
+        //User::factory()->count(1)->directOnly()->create();
 
         // Create 2 forbidden-permission only users
-        User::factory()->count(1)->forbidOnly()->create();
+        //User::factory()->count(5)->forbidOnly()->create();
 
         // Create 2 hybrid users (role + direct + forbidden)
-        User::factory()->count(1)->hybrid()->create();
+        //User::factory()->count(10)->hybrid()->create();
 
         // Create 2 temporary permission users
-        User::factory()->count(1)->temporary()->create();
+        //User::factory()->count(2)->temporary()->create();
     }
 }

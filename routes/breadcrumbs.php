@@ -45,9 +45,9 @@ Breadcrumbs::for('user_mngr', function (BreadcrumbTrail $trail) {
 });
 
 // Users list page
-Breadcrumbs::for('userslist', function (BreadcrumbTrail $trail) {
+Breadcrumbs::for('admin.user_management.dashboard', function (BreadcrumbTrail $trail) {
     $trail->parent('user_mngr');
-    $trail->push('Users List', route('userslist'));
+    $trail->push('Users List', route('admin.user_management.dashboard'));
 });
 
 // Menu generator page
