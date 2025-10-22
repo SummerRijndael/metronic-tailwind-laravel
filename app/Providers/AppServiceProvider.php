@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Gate;
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use App\Mail\CustomVerifyEmail; // <-- 1. Import your Mailable Class
+use Illuminate\Foundation\AliasLoader;
 
 class AppServiceProvider extends ServiceProvider {
     /**
@@ -14,7 +15,10 @@ class AppServiceProvider extends ServiceProvider {
      */
 
     public function register(): void {
-        //
+        // 🚀 START PATCH: Manually register the GeoIP Facade alias
+        $loader = AliasLoader::getInstance();
+        $loader->alias('GeoIP', \Torann\GeoIP\Facades\GeoIP::class);
+        // 🚀 END PATCH
     }
 
     /**

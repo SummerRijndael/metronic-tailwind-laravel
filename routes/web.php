@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\UserManagement\DashboardController;
 use App\Http\Controllers\Auth\UpdatePasswordController;
 use App\Http\Controllers\Auth\CustomResetPasswordController; // Custom controller for immediate token validation
 use App\Http\Controllers\TwoFactorEmailController;
+use App\Helpers\ActivityLogger;
 
 Route::middleware(['web', 'email.otp'])->group(function () {
     // Route to show the challenge view (your test blade)
@@ -76,7 +77,17 @@ Route::middleware(['auth', 'status.verify', 'verified'])->group(function () {
     Route::prefix('admin/user-management')->name('admin.user_management.')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/userslist', [DashboardController::class, 'list'])->name('dashboard.list');
+        Route::get('user/{user?}', [DashboardController::class, 'show'])->name('user.show');
+        // Assuming the {user} parameter resolves the User model using the public_id
+        // and the {sessionId} is the string ID of the session record.
+        // CRITICAL: Ensure the path starts with 'user/'
+        Route::delete('user/{user}/sessions/all', [DashboardController::class, 'revokeAllSessions'])
+            ->name('sessions.revoke_all');
+        // 🚀 PATCH: Change 'users' to 'user' to match the show route structure
+        Route::delete('user/{user}/sessions/{sessionId}', [DashboardController::class, 'revokeSession'])
+            ->name('sessions.revoke');
     });
+
 
     // C. TOOL & TEST ROUTES
 
@@ -85,14 +96,31 @@ Route::middleware(['auth', 'status.verify', 'verified'])->group(function () {
         return view('pages.tools.menu_config_gen');
     })->name('menugen');
 
-    // Test Routes (For development/debugging)
-    Route::get('/test', function () {
-        return view('welcome');
-    })->name('test');
 
     Route::get('/userslist', function () {
         return view('test2'); // Assuming 'test2' is a view for user list preview
     })->name('userslist');
+});
+
+// Test Routes (For development/debugging)
+Route::middleware('auth', 'password.confirm')->get('/test', function () {
+    return view('test');
+})->name('test');
+
+Route::get('/log-test', function () {
+    ActivityLogger::category('app')
+        ->action('test_run')
+        ->message('Logger system initialized successfully.')
+        ->meta([
+            'env' => app()->environment(),
+            'php_version' => PHP_VERSION,
+            'timestamp' => now()->toDateTimeString(),
+        ])
+        ->user(auth()->user()) // null if not logged in, safe fallback
+        ->source('system')
+        ->log();
+
+    return '✅ Logger test entry created!';
 });
 
 // Fortify/Breeze Authentication routes are assumed to be loaded elsewhere (e.g., Fortify::routes() or /auth.php).

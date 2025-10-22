@@ -75,19 +75,11 @@ if (!function_exists('prepare_menu')) {
      * @return array The processed menu array with 'active' and 'hasChild' flags.
      */
     function prepare_menu(array $menu): array {
-
-        // 0. Filter by access control BEFORE checking active state
-        // This ensures 'active' calculations only run on visible items.
         $menu = filter_menu_by_access($menu);
-
-        // Get current request data once for optimization
-        $currentRoute = optional(request()->route())->getName(); // The current Laravel named route
-        $currentUrl = url()->current();                         // The full absolute URL
-        // $currentPath is used for relative path matching
-        $currentPath = ltrim(request()->path(), '/'); // path without leading slash
+        $currentRoute = optional(request()->route())->getName();
 
         foreach ($menu as &$item) {
-            // --- Normalization: Set default values for missing keys ---
+            // defaults
             $item['type'] = $item['type'] ?? 'route';
             $item['title'] = $item['title'] ?? 'No Title';
             $item['icon'] = $item['icon'] ?? null;
@@ -96,56 +88,38 @@ if (!function_exists('prepare_menu')) {
             $item['external'] = $item['external'] ?? false;
             $item['children'] = $item['children'] ?? [];
             $item['permission'] = $item['permission'] ?? null;
-            $item['controlled_access'] = $item['controlled_access'] ?? false;
+            $item['skip_url'] = $item['skip_url'] ?? ($item['type'] === 'label');
+            $item['active'] = false;
 
-            // Normalize children first recursively
+            // recurse first
             if (!empty($item['children'])) {
                 $item['children'] = prepare_menu($item['children']);
             }
 
-            // --- Icon Handling ---
+            // icon file -> asset
             if (!empty($item['icon'])) {
                 $ext = pathinfo($item['icon'], PATHINFO_EXTENSION);
-                $isImage = in_array(strtolower($ext), ['png', 'jpg', 'jpeg', 'svg', 'gif']);
-
-                if ($isImage) {
-                    // If it's a file extension, assume it's an asset path
+                if (in_array(strtolower($ext), ['png', 'jpg', 'jpeg', 'svg', 'gif'])) {
                     $item['icon'] = asset($item['icon']);
                 }
-                // Otherwise, assume it's a CSS class and leave it as-is
             }
 
-            // Default active state
-            $item['active'] = false;
-
-            // --- Active State Calculation ---
-
-            // 1) Match by route name (supports exact match AND wildcard patterns like 'user.*')
+            // ✅ STRICT route logic with GROUP-AWARE activation
             if (!empty($item['route']) && $currentRoute) {
-                if (Str::is($item['route'], $currentRoute) || $item['route'] === $currentRoute) {
+                $exact = \Illuminate\Support\Str::is($item['route'], $currentRoute);
+
+                // group base = first two segments (e.g., admin.user_management.)
+                $parts = explode('.', $item['route']);
+                $groupBase = count($parts) >= 2 ? $parts[0] . '.' . $parts[1] . '.' : $item['route'] . '.';
+
+                $inGroup = \Illuminate\Support\Str::startsWith($currentRoute, $groupBase);
+
+                if ($exact || $inGroup) {
                     $item['active'] = true;
                 }
             }
 
-            // 2) Match by URL (Absolute or Relative Path)
-            if (!$item['active'] && !empty($item['url'])) {
-                $url = $item['url'];
-
-                if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
-                    // Absolute URL match (for external or absolute links)
-                    if (rtrim($url, '/') === rtrim($currentUrl, '/')) {
-                        $item['active'] = true;
-                    }
-                } else {
-                    // Relative Path match (uses Laravel's request()->is() for wildcards)
-                    $itemPath = ltrim(parse_url($url, PHP_URL_PATH) ?? $url, '/');
-                    if ($itemPath !== '' && request()->is($itemPath)) {
-                        $item['active'] = true;
-                    }
-                }
-            }
-
-            // 3) Propagate Active State (Parent becomes active if any child is active)
+            // bubble up from children
             if (!$item['active'] && !empty($item['children'])) {
                 foreach ($item['children'] as $child) {
                     if (!empty($child['active'])) {
@@ -155,10 +129,7 @@ if (!function_exists('prepare_menu')) {
                 }
             }
 
-            // --- Convenience Flags for Blade Rendering ---
             $item['hasChild'] = !empty($item['children']);
-            // Flag to prevent the anchor tag from rendering a URL, typically for type 'label'
-            $item['skip_url'] = $item['skip_url'] ?? ($item['type'] === 'label');
         }
 
         return $menu;

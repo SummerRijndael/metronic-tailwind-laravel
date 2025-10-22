@@ -4,17 +4,15 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request; // Use for type hinting
-use Illuminate\Support\Facades\Log; // Added for explicit logging utility
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Helpers\ActivityLogger;
+use App\Enums\ActivityCategory;
+use App\Enums\ActivityAction;
 
 class VerifyUserStatus {
     /**
-     * Handle an incoming request. This middleware acts as the primary gate
-     * (the Availability Layer) before any route or permission logic runs.
-     *
-     * @param Request $request
-     * @param Closure $next
-     * @return mixed
+     * Handle an incoming request. Acts as the Availability Layer before any route or permission logic.
      */
     public function handle(Request $request, Closure $next): mixed {
         // Skip if not authenticated at all
@@ -24,26 +22,13 @@ class VerifyUserStatus {
 
         $user = Auth::user();
 
-        /**
-         * 🔒 1. Skip middleware during the Fortify 2FA challenge process
-         * ------------------------------------------------------------
-         * Fortify sets a temporary "login.id" in session when user has passed
-         * password auth but not yet completed 2FA verification.
-         * In that state, we must NOT run status verification yet.
-         */
-        if (
-            $request->is('two-factor-challenge') ||
-            session()->has('login.id')
-        ) {
+        // 🔒 Skip middleware during Fortify 2FA challenge
+        if ($request->is('two-factor-challenge') || session()->has('login.id')) {
             return $next($request);
         }
 
-        /**
-         * 🧩 2. If user is suspended / blocked / disabled
-         * ------------------------------------------------
-         */
+        // 🧩 Check if user is suspended / blocked / disabled
         if (!$user->isActive()) {
-            // Try invalidating all active sessions for this user
             try {
                 $user->invalidateAllSessions();
             } catch (\Throwable $e) {
@@ -64,12 +49,19 @@ class VerifyUserStatus {
                 default     => 'Your session was terminated due to invalid account status.',
             };
 
-            logUserActivity(
-                'session_terminated',
-                "User session terminated. Status: {$status}.",
-                ['status' => $status, 'ip' => $request->ip()],
-                $user
-            );
+            // --- Unified Activity Logger
+            ActivityLogger::category(ActivityCategory::AUTH)
+                ->action(ActivityAction::SESSION_TERMINATED)
+                ->message("User session terminated. Status: {$status}.")
+                ->user($user)
+                ->meta([
+                    'status' => $status,
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'timestamp' => now()->toDateTimeString(),
+                ])
+                ->source('system')
+                ->log();
 
             if ($request->expectsJson()) {
                 return response()->json(['message' => $message], 403);

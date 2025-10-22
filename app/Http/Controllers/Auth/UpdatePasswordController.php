@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use App\Helpers\ActivityLogger;
+use App\Enums\ActivityCategory;
+use App\Enums\ActivityAction;
 
 class UpdatePasswordController extends Controller {
     /**
@@ -15,34 +18,49 @@ class UpdatePasswordController extends Controller {
      * @return mixed
      */
     public function update(Request $request): mixed {
-        // 1. Validation
-        // This validates current_password against the database and checks new password rules.
+        // 1️⃣ Validation
         $validated = $request->validateWithBag('updatePassword', [
             'current_password' => ['required', 'current_password'],
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
-        // 2. Database Update
-        // Update the password and add your custom 'password_changed_at' timestamp.
-        $request->user()->update([
+        $user = $request->user();
+
+        // 2️⃣ Database Update
+        $user->update([
             'password' => Hash::make($validated['password']),
-            'password_changed_at' => now(), // Custom field retained
+            'password_changed_at' => now(),
         ]);
 
-        // 3. Prepare the Custom Response (Toast/JSON)
+        // 3️⃣ Activity Logging
+        $meta = [
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'timestamp' => now()->toDateTimeString(),
+            'icon' => 'ki-filled ki-lock',
+            'color' => 'bg-info/60',
+        ];
+
+        ActivityLogger::category(ActivityCategory::AUTH)
+            ->action(ActivityAction::PASSWORD_CHANGED)
+            ->message("User {$user->name} updated their password.")
+            ->user($user)
+            ->meta($meta)
+            ->source('system')
+            ->log();
+
+        // 4️⃣ Prepare Custom Response
         $toast = [
             'message' => 'Password updated successfully.',
             'type' => 'success',
         ];
 
-        // 4. Handle Response
-
-        // Return JSON for AJAX/API requests.
+        // Return JSON for AJAX/API requests
         if ($request->wantsJson()) {
             return response()->json($toast, 200);
         }
 
-        // Redirect back for standard form submissions.
+        // Redirect back for standard form submissions
         return back()->with('status', 'password-updated');
     }
 }

@@ -1,4 +1,5 @@
 @extends('layouts.main.base')
+
 @section('content')
     {{-- Main Container (Page Wrapper) --}}
     <div class="min-h-screen border border-border p-8 shadow-md">
@@ -44,9 +45,9 @@
                                     <p class="text-sm font-medium text-yellow-700">Suspended</p>
                                     <p class="mt-0.5 text-2xl font-extrabold text-yellow-900">{{ $suspendedUsers }}</p>
                                 </div>
-                                <div class="rounded-lg bg-gray-100 p-3">
-                                    <p class="text-sm font-medium text-gray-600">Disabled</p>
-                                    <p class="mt-0.5 text-2xl font-extrabold text-gray-900">{{ $disabledUsers }}</p>
+                                <div class="kt-badge-outline kt-badge-mono rounded-lg p-3">
+                                    <p class="text-sm font-medium">Disabled</p>
+                                    <p class="mt-0.5 text-2xl font-extrabold text-purple-900">{{ $disabledUsers }}</p>
                                 </div>
                             </div>
                         </div>
@@ -80,11 +81,11 @@
                                     <p class="text-sm font-medium text-purple-700">Standard Users</p>
                                     <p class="mt-0.5 text-2xl font-extrabold text-purple-900">{{ $standardUsers }}</p>
                                 </div>
-                                <div class="rounded-lg bg-blue-50 p-3">
+                                <div class="kt-badge-outline kt-badge-mono rounded-lg p-3">
                                     <p class="text-sm font-medium text-blue-700">via RBAC Role</p>
                                     <p class="mt-0.5 text-2xl font-extrabold text-blue-900">{{ $viaRbacRole }}</p>
                                 </div>
-                                <div class="rounded-lg bg-blue-50 p-3">
+                                <div class="kt-badge-outline rounded-lg p-3">
                                     <p class="text-sm font-medium text-blue-700">Directly Assigned</p>
                                     <p class="mt-0.5 text-2xl font-extrabold text-blue-900">{{ $directlyAssigned }}</p>
                                 </div>
@@ -101,7 +102,7 @@
 
             {{-- ROW 2: Account Status Trend (Full Width) --}}
             {{-- This block should be independent of the first row to be full-width --}}
-            <div class="kt-card border border-border p-6 shadow-md">
+            <div class="kt-card border-debug border border-border p-6 shadow-md">
                 <div class="kt-card-content flex min-h-[500px] flex-col">
                     <h2 class="mb-4 text-lg font-semibold text-gray-800">
                         Account Status Trend (Past 6 Months)
@@ -176,7 +177,7 @@
                         data-kt-datatable-page-size="5" data-kt-datatable-state-save="true"
                         data-kt-datatable-initialized="true">
                         <div class="kt-table-wrapper kt-scrollable">
-                            <table class="kt-table" data-kt-datatable-table="true">
+                            <table class="kt-table kt-table-grid kt-table-border" data-kt-datatable-table="true">
                                 <thead>
                                     <tr>
 
@@ -200,7 +201,7 @@
                                             <span class="kt-table-col"><span class="kt-table-col-label">2fa status
                                                 </span><span class="kt-table-col-sort"></span></span>
                                         </th>
-                                        <th scope="col" class="w-24" data-kt-datatable-column="created_at">
+                                        <th scope="col" class="data-kt-datatable-column= w-24"created_at">
                                             <span class="kt-table-col"><span class="kt-table-col-label">Created
                                                     date</span><span class="kt-table-col-sort"></span></span>
                                         </th>
@@ -408,27 +409,35 @@
             };
         };
 
-        // ... Your Configuration Constants (ASSET_BASE_PATH, API_ENDPOINT, etc.) remain here ...
-
         var KTDatatableRemoteData = (function() {
 
             // --- Configuration Constants (Read-Only) ---
             const ASSET_BASE_PATH = '{{ asset('assets/media/avatars/') }}';
-            const STORAGE_BASE_PATH = '{{ asset('storage/') }}';
+            const STORAGE_BASE_PATH = '{{ asset('storage') }}'; // NOTE: Removed trailing slash, let JS handle it.
             const API_ENDPOINT = '{{ route('admin.user_management.dashboard.list') }}';
-            const SHOW_ROUTE_BASE = '{{ route('profile.show', '') }}';
+            const SHOW_ROUTE_BASE = '{{ route('admin.user_management.user.show', '') }}';
             const DESTROY_ROUTE_BASE = '{{ route('profile.destroy', '') }}';
             const EDIT_ROUTE_BASE = '{{ route('profile.update', '') }}';
 
             // --- Private State ---
             var instance = null;
 
-            // --- Utility Functions (getAvatarPath remains the same) ---
-            const getAvatarPath = function(avatarPathFragment) {
-                if (!avatarPathFragment || avatarPathFragment.endsWith('blank.png')) {
-                    return ASSET_BASE_PATH + '/blank.png';
+            // --- Utility Functions (getAvatarPath is corrected to handle full URLs) ---
+            const getAvatarPath = function(avatarPathValue) {
+                // 🚀 FIX: If the server returns a value that starts with http or https, trust it as a full URL.
+                if (avatarPathValue && (avatarPathValue.startsWith('http://') || avatarPathValue.startsWith(
+                        'https://'))) {
+                    return avatarPathValue;
                 }
-                return STORAGE_BASE_PATH + '/' + avatarPathFragment;
+
+                // If the server returned a fragment, prepend the storage base path.
+                if (avatarPathValue && avatarPathValue !== 'blank.png') {
+                    // Ensure there's a '/' between the base path and the fragment if one is a path.
+                    return STORAGE_BASE_PATH + '/' + avatarPathValue.replace(/^\//, '');
+                }
+
+                // Fallback to the default asset path.
+                return ASSET_BASE_PATH + '/blank.png';
             };
 
 
@@ -445,20 +454,13 @@
                     return null;
                 }
 
-                // 💡 CORRECTION 1: Find the filter button's container and the loading button
                 const filterDiv = document.getElementById('tools');
 
                 let loadingButton = null;
                 if (filterDiv) {
-                    // Search for the loading button component inside the 'tools' container
                     loadingButton = filterDiv.querySelector('[data-loading-button="true"]');
-                    console.log('loading button found');
-
-                } else {
-                    console.log('loading button not found');
                 }
 
-                // 💡 CORRECTION 2: Define the loading state toggler based on the found button
                 const toggleLoadingState = loadingButton && typeof loadingButton.toggleLoadingState ===
                     'function' ?
                     loadingButton.toggleLoadingState :
@@ -477,8 +479,6 @@
 
                     // --- mapRequest: Sends local filters to the API ---
                     mapRequest: function(queryParams) {
-                        // ... filter logic remains the same ...
-
                         const statusFilterEl = document.getElementById("status-filter");
                         const colSortEl = document.getElementById("data_range");
 
@@ -492,7 +492,6 @@
                             queryParams.set("col_sort", colSort);
                         }
 
-                        // 💡 CORRECTION 3: TURN ON loading state when the request is sent
                         toggleLoadingState(true);
 
                         return queryParams;
@@ -500,9 +499,6 @@
 
                     // --- mapResponse: Normalizes API response format ---
                     mapResponse: function(response) {
-                        // ... response normalization logic remains the same ...
-
-                        // 💡 CORRECTION 4: TURN OFF loading state when the response is received
                         toggleLoadingState(false);
 
                         if (response && response.data) {
@@ -515,7 +511,6 @@
                                     response.pageSize || 5)),
                             };
                         }
-                        // ... rest of the mapResponse logic (array/empty fallback) ...
 
                         // Ensure a valid structure is returned even on error/empty:
                         return {
@@ -534,7 +529,6 @@
                             field: 'id',
                             title: 'ID',
                             sortable: false,
-                            // OPTIMIZATION: Use a cleaner template string, ensure checkbox is the first column for visual consistency.
                             render: (value, row) => `
                         <input
                             type="checkbox"
@@ -548,41 +542,48 @@
                         // Full Name / Avatar Column
                         full_name: {
                             title: 'Fullname',
-                            // DEV NOTE: Ensure your API response contains the 'full_name' field.
                             render: (value, row) => {
                                 const userIdp = row.id;
+                                // 🚀 Uses the corrected getAvatarPath()
                                 const imagePath = getAvatarPath(row.avatar);
-                                // OPTIMIZATION: Maintain compact, semantic HTML with Tailwind/KTD classes.
-                                // Using template literals here is the correct approach.
-
                                 const showUrl_p = `${SHOW_ROUTE_BASE}/${userIdp}`;
 
+                                // Determine the online status class (from previous fix)
+                                const statusClass = row.is_online ? 'kt-avatar-status-online' :
+                                    'kt-avatar-status-offline';
+
                                 return `
-                                    <div class="flex items-center gap-2.5">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="kt-avatar size-9">
                                         <img
                                             src="${imagePath}"
                                             alt="${row.full_name}'s avatar"
-                                            class="rounded-full size-7 shrink-0 object-cover shadow-md"
+                                            class="rounded-full border border-border shadow-md"
                                             onerror="this.onerror=null;this.src='${ASSET_BASE_PATH + '/blank.png'}';"
                                         >
 
-                                        <div class="flex flex-col">
-                                            <a
+                                        <div class="kt-avatar-indicator -bottom-2 -end-2">
+                                            <div class="kt-avatar-status ${statusClass} size-2.5"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-col">
+                                        <a
                                             href="${showUrl_p}"
                                             class="text-sm font-medium text-gray-800 hover:text-primary mb-px"
                                             title="${row.full_name}"
-                                            >
-                                            ${row.full_name}
-                                            </a>
-                                            <a
+                                        >
+                                        ${row.full_name}
+                                        </a>
+                                        <a
                                             href="mailto:${row.email ?? '#'}"
                                             class="text-sm text-gray-500 font-normal hover:text-primary"
-                                            >
-                                            ${row.email ?? 'No email'}
-                                            </a>
-                                        </div>
+                                        >
+                                        ${row.email ?? 'No email'}
+                                        </a>
                                     </div>
-                        `;
+                                </div>
+                            `;
                             },
                         },
 
@@ -606,10 +607,6 @@
                             field: 'actions',
                             render: (value, row) => {
                                 const userId = row.id;
-                                // OPTIMIZATION: The base URLs are already constants, now we just append the ID.
-                                // DEV NOTE: You should ensure your Blade routes are defined as:
-                                // route('profile.show', ['profile' => '__ID__']) where '__ID__' is the placeholder.
-                                // The simple concatenation below assumes the route expects the ID at the end.
                                 const showUrl = `${SHOW_ROUTE_BASE}/${userId}`;
                                 const destroyUrl = `${DESTROY_ROUTE_BASE}/${userId}`;
                                 const editUrl = `${EDIT_ROUTE_BASE}/${userId}`;
@@ -685,8 +682,6 @@
                 const instance = window.datatableInstance;
 
                 if (instance && typeof instance.reload === 'function') {
-                    // Your API call logic fires here, which internally calls mapRequest
-                    // where the loading state is turned ON.
                     instance.reload();
                 } else {
                     console.warn('KTDataTable instance not found. Cannot reload.');

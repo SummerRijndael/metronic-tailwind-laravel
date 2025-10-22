@@ -10,6 +10,7 @@ return [
             'role_edit',
             'settings_edit_security',
             'report_view_financial',
+            'revoke_sessions_any'
         ],
         'Editor' => [
             'post_create',
@@ -17,12 +18,14 @@ return [
             'post_publish',
             'media_upload',
             'report_view_analytics',
+            'revoke_sessions_self'
         ],
         'User' => [
             'user_view_self',
             'user_edit_self',
             'post_view_self',
             'billing_view',
+            'revoke_sessions_self'
         ],
     ],
 
@@ -42,6 +45,8 @@ return [
         'media_upload'          => 'Upload media.',
         'report_view_analytics' => 'View analytics reports.',
         'billing_view'          => 'View billing details.',
+        'revoke_sessions_self' => 'Revoke own sessions',
+        'revoke_sessions_self' => 'Revoke any users Session',
     ],
 
     /*
@@ -63,6 +68,8 @@ return [
         'user_edit_any'          => ['label' => 'Edit Others', 'category' => 'User Management'],
         'user_edit_self'         => ['label' => 'Edit Profile', 'category' => 'User Management'],
         'user_delete'            => ['label' => 'Delete User', 'category' => 'User Management'],
+        'revoke_session_any'            => ['label' => 'Revoke Target Session', 'category' => 'User Management'],
+        'revoke_session_self'            => ['label' => 'Revoke Own Session', 'category' => 'User Management'],
 
         // 🧩 Roles & Security
         'role_edit'              => ['label' => 'Edit Roles', 'category' => 'Access Control'],

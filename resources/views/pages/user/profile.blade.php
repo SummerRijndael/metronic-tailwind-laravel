@@ -28,7 +28,7 @@
                             <div class="gap-1.25 flex items-center">
                                 <i class="ki-filled ki-sms text-sm text-muted-foreground">
                                 </i>
-                                <a class="hover:text-primary text-sm text-secondary-foreground hover:font-medium"
+                                <a class="text-sm text-secondary-foreground hover:font-medium hover:text-primary"
                                     href="mailto:{{ $user->email }}">
                                     {{ $user->email }}
                                 </a>
@@ -37,9 +37,16 @@
                         </div>
 
                         <!-- Status Badge -->
-                        <span class="kt-badge kt-badge-outline kt-badge-primary">
-                            {{ $user->is_active ? 'Available now' : 'Not available' }}
-                        </span>
+
+                        @if ($user->is_online)
+                            <span class="kt-badge kt-badge-outline kt-badge-success">
+                                Online
+                            </span>
+                        @else
+                            <span class="kt-badge kt-badge-outline kt-badge-mono">
+                                Offline
+                            </span>
+                        @endif
                     </div>
 
                     <!-- Info Rows -->
@@ -259,7 +266,7 @@
                                     Email
                                 </td>
                                 <td class="min-w-60 py-2">
-                                    <a class="hover:text-primary text-sm font-normal text-foreground"
+                                    <a class="text-sm font-normal text-foreground hover:text-primary"
                                         href="mailto:{{ $user->email }}">
                                         {{ $user->email }}
                                     </a>
@@ -328,7 +335,67 @@
                 </div>
             </div>
 
+
+            <div class="kt-card mt-4 w-full">
+                <div class="kt-card-header">
+                    <h3 class="kt-card-title">Recent Activity Logs</h3>
+                </div>
+                <div class="boder border-boder p-4 shadow-md">
+                    <div
+                        class="custom-scrollbar max-h-[500px] overflow-y-auto rounded-md border border-border bg-background">
+                        <table class="kt-table kt-table-border min-w-full divide-y divide-border text-sm">
+                            <thead class="sticky top-0 bg-background">
+                                <tr>
+                                    <th
+                                        class="w-1/5 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Timestamp</th>
+                                    <th
+                                        class="w-2/5 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Action Detail</th>
+                                    <th
+                                        class="w-1/5 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Source IP</th>
+                                    <th
+                                        class="w-1/5 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                @forelse($activities as $log)
+                                    <tr>
+                                        <td class="px-4 py-2">{{ $log->created_at->format('Y-m-d H:i:s') }}</td>
+                                        <td class="px-4 py-2">{{ ucfirst(str_replace('_', ' ', $log->action->value)) }}
+                                        </td>
+                                        <td class="px-4 py-2">{{ $log->ip_address ?? 'N/A' }}</td>
+                                        <td class="px-4 py-2">
+                                            @php
+                                                $level = strtoupper($log->level->value ?? 'info');
+                                                $badgeClass = match ($level) {
+                                                    'CRITICAL' => 'kt-badge-destructive',
+                                                    'WARNING' => 'kt-badge-warning',
+                                                    default => 'kt-badge-primary',
+                                                };
+                                            @endphp
+                                            <span
+                                                class="kt-badge kt-badge-outline {{ $badgeClass }}">{{ $level }}</span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="px-4 py-4 text-center text-muted-foreground">No recent
+                                            activity found.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
+
+
+
     </div>
 
     <!-- End Main Grid Container -->

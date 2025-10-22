@@ -90,7 +90,7 @@ class FortifyServiceProvider extends ServiceProvider {
 
         // NOTE: The request object is passed to the resetPasswordView for accessing token/email parameters.
         Fortify::resetPasswordView(fn($request) => view('auth.reset-password', ['request' => $request]));
-
+        Fortify::confirmPasswordView(fn() => view('auth.confirm-password'));
         Fortify::twoFactorChallengeView(fn() => view('auth.two-factor-challenge'));
         Fortify::verifyEmailView(fn() => view('auth.verify-email'));
 

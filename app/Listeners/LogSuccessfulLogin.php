@@ -3,41 +3,48 @@
 namespace App\Listeners;
 
 use Illuminate\Auth\Events\Login;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Helpers\ActivityLogger;
+use App\Enums\ActivityCategory;
+use App\Enums\ActivityAction;
 
 class LogSuccessfulLogin {
-    // 1. Static flag to track execution status within the current request
+    /**
+     * Prevent duplicate firing within the same request cycle.
+     */
     protected static bool $hasExecuted = false;
 
     /**
      * Handle the event.
      */
     public function handle(Login $event): void {
-        // CRITICAL DEBOUNCE CHECK: Stop if already executed in this request
+        // 🧠 Debounce check
         if (static::$hasExecuted) {
-            // This is the line that blocks the duplicate execution
             return;
         }
-
-        // Mark the listener as executed for the remainder of this request
         static::$hasExecuted = true;
-
-        // --- YOUR ORIGINAL LOGIC FOR LOGGING STARTS HERE ---
 
         $user = $event->user;
 
-        if ($user) {
-            $name = $user->name ?? $user->email;
-
-            logUserActivity(
-                'user_logged_in',
-                "User logged in: {$name}.",
-                [
-                    'icon' => 'ki-filled ki-lock-open',
-                    'color' => 'bg-success/60'
-                ],
-                $user
-            );
+        if (! $user) {
+            return;
         }
+
+        // Meta information
+        $meta = [
+            'ip' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'icon' => 'ki-filled ki-lock-open',
+            'color' => 'bg-success/60',
+            'timestamp' => now()->toDateTimeString(),
+        ];
+
+        // Unified activity log
+        ActivityLogger::category(ActivityCategory::AUTH)
+            ->action(ActivityAction::LOGIN)
+            ->message("{$user->name} logged in successfully.")
+            ->user($user)
+            ->meta($meta)
+            ->source('system')
+            ->log();
     }
 }

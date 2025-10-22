@@ -6,7 +6,7 @@ use App\Models\User;
 
 // Dashboard
 Breadcrumbs::for('dashboard', function (BreadcrumbTrail $trail) {
-    $trail->push('Home', route('dashboard'));
+    $trail->push('Dashboard', route('dashboard'));
 });
 
 // My Account page
@@ -41,13 +41,18 @@ Breadcrumbs::for('profile_settings.show', function (BreadcrumbTrail $trail) {
 // My Account page
 Breadcrumbs::for('user_mngr', function (BreadcrumbTrail $trail) {
     $trail->parent('dashboard');
-    $trail->push('Users Management', '#');
+    $trail->push('Administration', '#');
 });
 
 // Users list page
 Breadcrumbs::for('admin.user_management.dashboard', function (BreadcrumbTrail $trail) {
     $trail->parent('user_mngr');
-    $trail->push('Users List', route('admin.user_management.dashboard'));
+    $trail->push('All Users', route('admin.user_management.dashboard'));
+});
+
+Breadcrumbs::for('admin.user_management.user.show', function (BreadcrumbTrail $trail) {
+    $trail->parent('admin.user_management.dashboard');
+    $trail->push('User Profile', route('admin.user_management.user.show'));
 });
 
 // Menu generator page

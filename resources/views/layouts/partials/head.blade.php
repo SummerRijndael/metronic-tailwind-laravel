@@ -15,6 +15,7 @@
 <meta content="website" property="og:type" />
 <meta content="@keenthemes" property="og:site_name" />
 <meta content="Metronic - Tailwind CSS " property="og:title" />
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <meta content="" property="og:description" />
 <meta content="{{ asset('assets/media/app/og-image.png') }}" property="og:image" />
 <link href="{{ asset('assets/media/app/apple-touch-icon.png') }}" rel="apple-touch-icon" sizes="180x180" />

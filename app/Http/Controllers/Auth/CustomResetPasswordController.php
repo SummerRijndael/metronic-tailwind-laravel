@@ -4,23 +4,24 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;       // <-- We need this for the secure direct check
-use Illuminate\Support\Facades\Hash;     // <-- We need this for the secure token comparison
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\Rules;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse; // <-- Add this import
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Auth\Events\PasswordReset;
+use App\Helpers\ActivityLogger;
+use App\Enums\ActivityCategory;
+use App\Enums\ActivityAction;
 
 class CustomResetPasswordController extends Controller {
     /**
      * Display the password reset view after immediate token validation.
-     * Mapped to the 'password.reset' GET route.
+     *
      * @param  \Illuminate\Http\Request  $request
-     * @param  string|null  $token The token from the URL segment.
-     * @return \Illuminate\View\View
-     * @throws \Illuminate\Validation\ValidationException
+     * @param  string|null  $token
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function create(Request $request, ?string $token = null): View|RedirectResponse {
         $email = $request->query('email');
@@ -29,18 +30,13 @@ class CustomResetPasswordController extends Controller {
             ->where('email', $email)
             ->first();
 
-        // Failure Check (Token non-existent or hash mismatch)
         if (is_null($resetRecord) || ! Hash::check($token, $resetRecord->token)) {
-
             $message = 'The password reset link is invalid or has expired. Please request a new one.';
-
-            // This RedirectResponse object is now allowed by the new signature
             return redirect()->route('password.request')
                 ->withErrors(['email' => $message])
                 ->withInput(['email' => $email]);
         }
 
-        // 3. SUCCESS: Render the reset form
         return view('auth.reset-password', [
             'request' => $request,
             'token' => $token,
@@ -48,30 +44,54 @@ class CustomResetPasswordController extends Controller {
         ]);
     }
 
-    // The 'reset' method for the POST request remains the same as it correctly uses the Password facade.
-    public function reset(Request $request): \Illuminate\Http\RedirectResponse {
-        // 1. Validation
+    /**
+     * Handle the password reset POST request and log activity.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function reset(Request $request): RedirectResponse {
+        // 1️⃣ Validation
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        // 2. Perform Password Reset (This will run the final, official token/expiry validation)
+        $email = $request->input('email');
+
+        // 2️⃣ Perform Password Reset
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
-                // This callback runs ONLY if the token is valid, not expired, and credentials match.
                 $user->forceFill([
                     'password' => Hash::make($password),
-                    // 'password_changed_at' => now(), // Add your custom timestamp here if needed
+                    'password_changed_at' => now(),
                 ])->save();
 
+                // Fire the standard PasswordReset event
                 event(new PasswordReset($user));
+
+                // 3️⃣ Activity Logging
+                $meta = [
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                    'timestamp' => now()->toDateTimeString(),
+                    'icon' => 'ki-filled ki-lock',
+                    'color' => 'bg-info/60',
+                ];
+
+                ActivityLogger::category(ActivityCategory::AUTH)
+                    ->action(ActivityAction::PASSWORD_RESET)
+                    ->message("User {$user->name} reset their password via email link.")
+                    ->user($user)
+                    ->meta($meta)
+                    ->source('system')
+                    ->log();
             }
         );
 
-        // 3. Handle Response
+        // 4️⃣ Response Handling
         return $status === Password::PASSWORD_RESET
             ? redirect()->route('login')->with('status', __($status))
             : back()->withErrors(['email' => [__($status)]]);

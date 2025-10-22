@@ -1,22 +1,6 @@
 @extends('layouts.main.base') <!-- or your main layout -->
 
 @section('content')
-    dd($user);
-    <x-modal id="welcome_modal" title="Welcome to Metronic" :autoShow="false" :image="'assets/media/illustrations/21.svg'">
-        Hello {{ auth()->user()->name }}! we're thrilled to have you on board and excited for the journey ahead
-        together.
-
-        <x-slot name="actions">
-            <a href="{{ url('/dashboard') }}" class="kt-btn kt-btn-primary flex justify-center">
-                Show me around
-            </a>
-            <a href="#" class="kt-btn kt-btn-outline ms-2 flex justify-center">
-                Skip
-            </a>
-
-        </x-slot>
-    </x-modal>
-
     <div id="app" class="container-wrapper">
 
         <!-- HEADER / USER CONTEXT BAR -->
@@ -625,10 +609,10 @@
                     ${
                       !isCurrent
                         ? `
-                                                                                                                                                                                                                                <button type="button" onclick="alert('Revoking session ${session.id}')"
-                                                                                                                                                                                                                                    class="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition duration-150">
-                                                                                                                                                                                                                                    <i class="fas fa-sign-out-alt mr-1"></i> Revoke
-                                                                                                                                                                                                                                </button>`
+                                                                                                                                                                                                                                    <button type="button" onclick="alert('Revoking session ${session.id}')"
+                                                                                                                                                                                                                                        class="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition duration-150">
+                                                                                                                                                                                                                                        <i class="fas fa-sign-out-alt mr-1"></i> Revoke
+                                                                                                                                                                                                                                    </button>`
                         : `<span class="text-xs text-slate-400 italic mt-2 sm:mt-0">Current Session</span>`
                     }
                 `;
